@@ -8,14 +8,14 @@ Ipsum exercitation reprehenderit minim in aliquip deserunt amet nisi esse. Ad ex
 ## Implementations
 On its own, ContextRunner doesn't output any log entries. The following are existing implementations that add logging output:
 
-* [ContextRunner.NLog](https://github.com/matholum/contextRunner/ContextRunner.NLog) - An implementation utilizing NLog to output log entries
-* [ContextRunner.FlatIO](https://github.com/matholum/contextRunner/ContextRunner.FlatIO) - An example logging implementation that just uses `System.IO` to output log entries instead of using a common logging library.
-* [ContextRunner](https://github.com/matholum/contextRunner/ContextRunner) - You can of course implement your own ContextRunner.. just follow the steps to do so [here](/ContextRunner)!
+* [ContextRunner.NLog](/ContextRunner.NLog) - An implementation utilizing NLog to output log entries
+* [ContextRunner.FlatIO](/ContextRunner.FlatIO) - An example logging implementation that just uses `System.IO` to output log entries instead of using a common logging library.
+* [ContextRunner](/ContextRunner) - You can of course implement your own ContextRunner.. just follow the steps to do so [here](/ContextRunner)!
 
 ## Extensions
 The following add functionality to ContextRunner or provide tools for using it in different ways:
 
-* [ContextRunner.Http](https://github.com/matholum/contextRunner/ContextRunner.Http) - An ASP.NET Core middleware that wraps incoming requests inside of a context.
+* [ContextRunner.Http](/ContextRunner.Http) - An ASP.NET Core middleware that wraps incoming requests inside of a context.
 
 ## Using ContextRunner
 
