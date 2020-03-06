@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <PackOnBuild>true</PackOnBuild>
+    <Authors>Killian Hale</Authors>
+    <Description>A tool for wrapping actions into a context that may contain state parameters, enhancing logging and exception handling.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Reactive.Core" Version="4.3.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Logging\" />
+    <Folder Include="State\" />
+    <Folder Include="Base\" />
+    <Folder Include="State\Sanitizers\" />
+  </ItemGroup>
+</Project>

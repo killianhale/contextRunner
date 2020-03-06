@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <Authors>Killian Hale</Authors>
+    <Description>An implemention of ContextRunner utilizing NLog. Single log entries are output at they occur with the current context state. A summarized entry is output at the completion of a root context with the end state.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NLog" Version="4.6.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ContextRunner\ContextRunner.csproj" />
+  </ItemGroup>
+</Project>
