@@ -128,7 +128,7 @@ namespace ContextRunner.State.Sanitizers
             {
                 var val = SanitizeParam(property.Name, property.GetValue(obj));
 
-                dictionary.Add(property.Name, val);
+                dictionary[property.Name] = val;
             }
 
             return expando;

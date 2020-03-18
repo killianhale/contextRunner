@@ -22,7 +22,7 @@ namespace ContextRunner.NLog
             OnStart = Setup;
             Sanitizers = _config.SanitizedProperties != null && _config.SanitizedProperties.Length > 0
                 ? new[] { new KeyBasedSanitizer(_config.SanitizedProperties) }
-                : new ISanitizer[0];
+                : new[] { new KeyBasedSanitizer(new string[0]) };
         }
 
         private void Setup(ActionContext context)
