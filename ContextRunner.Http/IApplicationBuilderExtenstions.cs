@@ -9,5 +9,10 @@ namespace ContextRunner.Http
         {
             app.UseMiddleware<ActionContextMiddleware>();
         }
+
+        public static void AddContextMiddleware(this IApplicationBuilder app, ActionContextMiddlewareConfig config)
+        {
+            app.UseMiddleware<ActionContextMiddleware>();
+        }
     }
 }
