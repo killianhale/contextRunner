@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
 
 namespace ContextRunner.Http.Middleware
 {
@@ -9,11 +10,13 @@ namespace ContextRunner.Http.Middleware
     {
         private readonly RequestDelegate _next;
         private readonly IContextRunner _runner;
+        private readonly IOptionsMonitor<ActionContextMiddlewareConfig> _configMonitor;
 
-        public ActionContextMiddleware(RequestDelegate next, IContextRunner runner)
+        public ActionContextMiddleware(RequestDelegate next, IContextRunner runner, IOptionsMonitor<ActionContextMiddlewareConfig> configMonitor)
         {
             _next = next;
             _runner = runner;
+            _configMonitor = configMonitor;
         }
 
         public async Task Invoke(HttpContext httpContext)
@@ -22,15 +25,29 @@ namespace ContextRunner.Http.Middleware
             var controller = routeData == null ? null : routeData["controller"];
             var action = routeData == null ? null : routeData["action"];
 
-            if (controller == null || action == null)
+            var name = controller != null && action != null
+                ? $"{controller}_{action}"
+                : null;
+
+            if (name == null)
             {
-                await _next(httpContext);
-                return;
+                if(IsPathWhitelisted(httpContext.Request.Path))
+                {
+                    name = httpContext.Request.Path.ToString();
+                    name = name.Substring(_configMonitor.CurrentValue.PathPrefixWhitelist.Length);
+                    name = name.Replace('/', '_');
+                    name += $"_{httpContext.Request.Method}";
+                }
+                else
+                {
+                    await _next(httpContext);
+                    return;
+                }
             }
 
             await _runner.RunAction(async context =>
             {
-                var ignoreList = new[] { "Connection", "Accept-Encoding", "Accept-Language", "Content-Length", "Sec-Fetch-Site", "Sec-Fetch-Mode" };
+                var ignoreList = new[] { "Cookie", "Connection", "Accept-Encoding", "Accept-Language", "Content-Length", "Sec-Fetch-Site", "Sec-Fetch-Mode" };
 
                 var requestInfo = httpContext.Request.Headers
                     .Where(header => !ignoreList.Contains(header.Key))
@@ -45,7 +62,20 @@ namespace ContextRunner.Http.Middleware
                 context.State.SetParam("request", requestInfo);
 
                 await _next(httpContext);
-            }, $"{controller}_{action}");
+            }, name);
+        }
+
+        private bool IsPathWhitelisted(PathString path)
+        {
+            var config = _configMonitor.CurrentValue;
+            var whitelistPath = !string.IsNullOrEmpty(config?.PathPrefixWhitelist)
+                ? config.PathPrefixWhitelist
+                : null;
+            var pathString = path.ToString();
+
+            var isWhitelisted = whitelistPath != null && pathString.StartsWith(whitelistPath);
+
+            return isWhitelisted;
         }
     }
 }
