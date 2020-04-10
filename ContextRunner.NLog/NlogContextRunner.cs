@@ -15,12 +15,22 @@ namespace ContextRunner.NLog
     {
         private readonly NlogContextRunnerConfig _config;
 
-        public NlogContextRunner(IOptionsMonitor<NlogContextRunnerConfig> nlogContextOptions)
+        public NlogContextRunner(NlogContextRunnerConfig config)
         {
-            _config = nlogContextOptions.CurrentValue;
+            _config = config;
 
             OnStart = Setup;
-            Sanitizers = _config.SanitizedProperties != null && _config.SanitizedProperties.Length > 0
+            Sanitizers = _config?.SanitizedProperties != null && _config.SanitizedProperties.Length > 0
+                ? new[] { new KeyBasedSanitizer(_config.SanitizedProperties) }
+                : new[] { new KeyBasedSanitizer(new string[0]) };
+        }
+
+        public NlogContextRunner(IOptionsMonitor<NlogContextRunnerConfig> options)
+        {
+            _config = options.CurrentValue;
+
+            OnStart = Setup;
+            Sanitizers = _config?.SanitizedProperties != null && _config.SanitizedProperties.Length > 0
                 ? new[] { new KeyBasedSanitizer(_config.SanitizedProperties) }
                 : new[] { new KeyBasedSanitizer(new string[0]) };
         }
@@ -64,7 +74,7 @@ namespace ContextRunner.NLog
 
         private string AddSpacing(ContextLogEntry entry)
         {
-            if(!_config.AddSpacingToEntries)
+            if(_config?.AddSpacingToEntries == null || !_config.AddSpacingToEntries)
             {
                 return entry.Message;
             }
