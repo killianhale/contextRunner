@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using NLog;
@@ -62,8 +62,9 @@ namespace ContextRunner.NLog
             var entries = context.Logger.LogEntries
                 .Select(e => new
                 {
-                    Level = ConvertLogLevel(e.LogLevel),
+                    Level = ConvertLogLevel(e.LogLevel).ToString(),
                     Message = AddSpacing(e),
+                    Context = e.ContextName,
                     e.TimeElapsed
                 });
 
@@ -106,7 +107,11 @@ namespace ContextRunner.NLog
         {
             var result = new Dictionary<object, object>();
 
-            result.Add("contextDepth", entry?.ContextDepth ?? context.Depth);
+            if(entry != null)
+            {
+                result.Add("contextDepth", entry?.ContextDepth ?? context.Depth);
+            }
+
             result.Add("contextName", entry?.ContextName ?? context.ContextName);
             result.Add("timeElapsed", entry?.TimeElapsed ?? context.TimeElapsed);
 

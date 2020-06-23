@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
@@ -47,18 +47,23 @@ namespace ContextRunner.State.Sanitizers
             {
                 return obj;
             }
+            else if (obj is ExpandoObject)
+            {
+                return GetDictionary((IDictionary<string, object>)obj);
+            }
+            else if(obj is IDictionary<string, object>)
+            {
+                return GetDictionary(obj as IDictionary<string, object>);
+            }
             else if(obj is System.Collections.IEnumerable)
             {
                 var enumerable = obj as System.Collections.IEnumerable;
 
                 var result = new List<object>(enumerable.Cast<object>())
-                    .Select(item => SanitizeParam(null, item));
+                    .Select(item => SanitizeParam(null, item))
+                    .ToList();
 
                 return result;
-            }
-            else if(obj is IDictionary<string, object>)
-            {
-                return GetDictionary(obj as IDictionary<string, object>);
             }
             else if(obj is Exception)
             {
@@ -140,7 +145,17 @@ namespace ContextRunner.State.Sanitizers
                 .Where(key => !_sanitizedKeys.Contains(key))
                 .ToDictionary(
                     key => key,
-                    key => dictionary[key]
+                    key =>
+                    {
+
+                        var type = dictionary[key]?.GetType();
+
+                        var result = type == null || type.IsPrimitive || type.IsAssignableFrom(typeof(string))
+                            ? dictionary[key]
+                            : SanitizeParam(key, dictionary[key]);
+
+                        return result;
+                    }
                 );
         }
     }
