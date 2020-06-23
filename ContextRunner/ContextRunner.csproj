@@ -4,7 +4,7 @@
     <PackOnBuild>true</PackOnBuild>
     <Authors>Killian Hale</Authors>
     <Description>A tool for wrapping actions into a context that may contain state parameters, enhancing logging and exception handling.</Description>
-    <PackageVersion>1.0.1</PackageVersion>
+    <PackageVersion>1.0.2</PackageVersion>
     <TargetFrameworks>netstandard2.1;</TargetFrameworks>
   </PropertyGroup>
 

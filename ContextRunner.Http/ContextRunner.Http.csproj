@@ -6,7 +6,7 @@
     <OutputType>Library</OutputType>
     <Authors>Killian Hale</Authors>
     <Description>ASP Net Core middleware utilizing ContextRunner to wrap HTTP requests into a context, granting the ability to aggregate to a single log entry all logs associated with the resulting operations.</Description>
-    <PackageVersion>1.0.1</PackageVersion>
+    <PackageVersion>1.0.2</PackageVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(RunConfiguration)' == 'EventStoreLearning.Common.Web' ">
