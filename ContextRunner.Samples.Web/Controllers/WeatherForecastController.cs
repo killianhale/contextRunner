@@ -46,6 +46,16 @@ namespace ContextRunner.Samples.Web.Controllers
             }, "WeatherService");
         }
 
+        [HttpGet]
+        [Route("error")]
+        public async Task<IEnumerable<WeatherForecast>> GetError()
+        {
+            return await _runner.RunAction<IEnumerable<WeatherForecast>>(async context =>
+            {
+                throw new Exception("Sample exception!");
+            }, "WeatherService");
+        }
+
         [HttpPost]
         public async Task<WeatherForecast> Post(WeatherForecast forcast)
         {

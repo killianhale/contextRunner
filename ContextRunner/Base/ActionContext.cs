@@ -21,7 +21,10 @@ namespace ContextRunner.Base
         private readonly Stopwatch _stopwatch;
         private readonly ActionContext _parent;
 
-        public ActionContext([CallerMemberName]string name = null, IEnumerable<ISanitizer> logSanitizers = null)
+        public ActionContext(
+            [CallerMemberName]string name = null,
+            ActionContextSettings settings = null,
+            IEnumerable<ISanitizer> logSanitizers = null)
         {
             _stopwatch = new Stopwatch();
             _stopwatch.Start();
@@ -33,12 +36,16 @@ namespace ContextRunner.Base
             
             if(IsRoot)
             {
+                Settings = settings ?? new ActionContextSettings();
+
                 Depth = 0;
                 State = new ContextState(logSanitizers);
                 Logger = new ContextLogger(this);
             }
             else
             {
+                Settings = _parent.Settings;
+
                 Depth = _parent.Depth + 1;
                 State = _parent.State;
 
@@ -46,9 +53,16 @@ namespace ContextRunner.Base
                 Logger.TrySetContext(this);
             }
 
+            if (Settings.EnableContextStartMessage)
+            {
+                Logger.Log(Settings.ContextStartMessageLevel,
+                    $"Context {ContextName} has started.");
+            }
+
             Loaded?.Invoke(this);
         }
 
+        public ActionContextSettings Settings { get; }
         public ContextLogger Logger { get; }
         public ContextState State { get; }
 
@@ -68,7 +82,11 @@ namespace ContextRunner.Base
         {
             _stopwatch.Stop();
 
-            Logger.Trace($"Context {ContextName} has ended.");
+            if(Settings.EnableContextEndMessage)
+            {
+                Logger.Log(Settings.ContextEndMessageLevel,
+                    $"Context {ContextName} has ended.");
+            }
 
             _current.Value = _parent;
 

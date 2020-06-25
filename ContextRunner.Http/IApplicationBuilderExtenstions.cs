@@ -5,12 +5,14 @@ namespace ContextRunner.Http
 {
     public static class IApplicationBuilderExtenstions
     {
-        public static void AddContextMiddleware(this IApplicationBuilder app)
+        public static void UseContextRunnerHttpMiddleware(this IApplicationBuilder app)
         {
             app.UseMiddleware<ActionContextMiddleware>();
         }
 
-        public static void AddContextMiddleware(this IApplicationBuilder app, ActionContextMiddlewareConfig config)
+        public static void UseContextRunnerHttpMiddleware(
+            this IApplicationBuilder app,
+            ActionContextMiddlewareConfig config)
         {
             app.UseMiddleware<ActionContextMiddleware>();
         }

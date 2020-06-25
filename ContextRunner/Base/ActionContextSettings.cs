@@ -1,12 +1,11 @@
 ﻿using System;
-using ContextRunner.Base;
-using NLog;
+using Microsoft.Extensions.Logging;
 
-namespace ContextRunner.NLog
+namespace ContextRunner.Base
 {
-    public class NlogContextRunnerConfig
+    public class ActionContextSettings
     {
-        public NlogContextRunnerConfig()
+        public ActionContextSettings()
         {
             EnableContextStartMessage = false;
             ContextStartMessageLevel = LogLevel.Trace;
@@ -24,8 +23,5 @@ namespace ContextRunner.NLog
         public LogLevel ContextEndMessageLevel { get; set; }
 
         public LogLevel ContextErrorMessageLevel { get; set; }
-
-        public bool AddSpacingToEntries { get; set; }
-        public string[] SanitizedProperties { get; set; }
     }
 }

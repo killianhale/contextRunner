@@ -99,7 +99,7 @@ namespace ContextRunner.Samples.Web
 
             app.UseRouting();
 
-            app.AddContextMiddleware();
+            app.UseContextRunnerHttpMiddleware();
 
             app.UseAuthorization();
 

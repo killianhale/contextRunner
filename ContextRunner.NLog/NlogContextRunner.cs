@@ -20,6 +20,7 @@ namespace ContextRunner.NLog
             _config = config;
 
             OnStart = Setup;
+            Settings = GetActionContextSettings();
             Sanitizers = _config?.SanitizedProperties != null && _config.SanitizedProperties.Length > 0
                 ? new[] { new KeyBasedSanitizer(_config.SanitizedProperties) }
                 : new[] { new KeyBasedSanitizer(new string[0]) };
@@ -30,9 +31,22 @@ namespace ContextRunner.NLog
             _config = options.CurrentValue;
 
             OnStart = Setup;
+            Settings = GetActionContextSettings();
             Sanitizers = _config?.SanitizedProperties != null && _config.SanitizedProperties.Length > 0
                 ? new[] { new KeyBasedSanitizer(_config.SanitizedProperties) }
                 : new[] { new KeyBasedSanitizer(new string[0]) };
+        }
+
+        private ActionContextSettings GetActionContextSettings()
+        {
+            return new ActionContextSettings
+            {
+                EnableContextEndMessage = _config.EnableContextEndMessage,
+                EnableContextStartMessage = _config.EnableContextStartMessage,
+                ContextEndMessageLevel = ConvertToMsLogLevel(_config.ContextEndMessageLevel),
+                ContextStartMessageLevel = ConvertToMsLogLevel(_config.ContextStartMessageLevel),
+                ContextErrorMessageLevel = ConvertToMsLogLevel(_config.ContextErrorMessageLevel)
+            };
         }
 
         private void Setup(ActionContext context)
@@ -53,7 +67,7 @@ namespace ContextRunner.NLog
             var logger = LogManager.GetLogger($"context_{context.ContextName}");
 
             var entry = GetSummaryLogEntry(context);
-            var level = ConvertLogLevel(entry.LogLevel);
+            var level = ConvertFromMsLogLevel(entry.LogLevel);
             var eventParams = GetEventParams(context);
 
             var e = new LogEventInfo(level, logger.Name, entry.Message);
@@ -62,7 +76,7 @@ namespace ContextRunner.NLog
             var entries = context.Logger.LogEntries
                 .Select(e => new
                 {
-                    Level = ConvertLogLevel(e.LogLevel).ToString(),
+                    Level = ConvertFromMsLogLevel(e.LogLevel).ToString(),
                     Message = AddSpacing(e),
                     Context = e.ContextName,
                     e.TimeElapsed
@@ -94,7 +108,7 @@ namespace ContextRunner.NLog
         {
             var logger = LogManager.GetLogger(entry.ContextName);
 
-            var level = ConvertLogLevel(entry.LogLevel);
+            var level = ConvertFromMsLogLevel(entry.LogLevel);
             var eventParams = GetEventParams(context, entry);
 
             var e = new LogEventInfo(level, logger.Name, entry.Message);
@@ -125,7 +139,7 @@ namespace ContextRunner.NLog
             return result;
         }
 
-        private LogLevel ConvertLogLevel(MsLogLevel level)
+        private LogLevel ConvertFromMsLogLevel(MsLogLevel level)
         {
             return level switch
             {
@@ -137,6 +151,38 @@ namespace ContextRunner.NLog
                 MsLogLevel.Critical => LogLevel.Fatal,
                 _ => LogLevel.Off,
             };
+        }
+
+        private MsLogLevel ConvertToMsLogLevel(LogLevel level)
+        {
+            var result = MsLogLevel.None;
+
+            if(level == LogLevel.Trace)
+            {
+                result = MsLogLevel.Trace;
+            }
+            else if (level == LogLevel.Debug)
+            {
+                result = MsLogLevel.Debug;
+            }
+            else if (level == LogLevel.Info)
+            {
+                result = MsLogLevel.Information;
+            }
+            else if (level == LogLevel.Warn)
+            {
+                result = MsLogLevel.Warning;
+            }
+            else if (level == LogLevel.Error)
+            {
+                result = MsLogLevel.Error;
+            }
+            else if (level == LogLevel.Fatal)
+            {
+                result = MsLogLevel.Critical;
+            }
+
+            return result;
         }
 
         private ContextLogEntry GetSummaryLogEntry(ActionContext context)

@@ -10,17 +10,22 @@ namespace ContextRunner
     public class ContextRunner : IContextRunner
     {
         protected Action<ActionContext> OnStart { get; set; }
+        protected ActionContextSettings Settings { get; set; }
         protected IEnumerable<ISanitizer> Sanitizers { get; set; }
 
-        public ContextRunner(Action<ActionContext> onStart = null, IEnumerable<ISanitizer> sanitizers = null)
+        public ContextRunner(
+            Action<ActionContext> onStart = null,
+            ActionContextSettings settings = null,
+            IEnumerable<ISanitizer> sanitizers = null)
         {
             OnStart = onStart;
+            Settings = settings;
             Sanitizers = sanitizers ?? new ISanitizer[0];
         }
 
         public void RunAction(Action<ActionContext> action, [CallerMemberName]string name = null)
         {
-            using (var context = new ActionContext(name, Sanitizers))
+            using (var context = new ActionContext(name, Settings, Sanitizers))
             {
                 try
                 {
@@ -40,7 +45,7 @@ namespace ContextRunner
 
         public async Task RunAction(Func<ActionContext, Task> action, [CallerMemberName]string name = null)
         {
-            using (var context = new ActionContext(name, Sanitizers))
+            using (var context = new ActionContext(name, Settings, Sanitizers))
             {
                 try
                 {
@@ -60,7 +65,7 @@ namespace ContextRunner
 
         public async Task<T> RunAction<T>(Func<ActionContext, Task<T>> action, [CallerMemberName]string name = null)
         {
-            using (var context = new ActionContext(name, Sanitizers))
+            using (var context = new ActionContext(name, Settings, Sanitizers))
             {
                 try
                 {
@@ -86,7 +91,8 @@ namespace ContextRunner
             {
                 context.State.SetParam("Exception", ex);
 
-                context.Logger.Trace($"An exception of type {ex.GetType().Name} was thrown within the context '{context.ContextName}'!");
+                context.Logger.Log(Settings.ContextErrorMessageLevel,
+                    $"An exception of type {ex.GetType().Name} was thrown within the context '{context.ContextName}'!");
 
                 toThrow = new ContextException(context, $"Error occurred within the context '{context.ContextName}'!", ex);
             }
