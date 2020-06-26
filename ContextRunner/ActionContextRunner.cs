@@ -7,19 +7,19 @@ using ContextRunner.State;
 
 namespace ContextRunner
 {
-    public class ContextRunner : IContextRunner
+    public class ActionContextRunner : IContextRunner
     {
         protected Action<ActionContext> OnStart { get; set; }
         protected ActionContextSettings Settings { get; set; }
         protected IEnumerable<ISanitizer> Sanitizers { get; set; }
 
-        public ContextRunner(
+        public ActionContextRunner(
             Action<ActionContext> onStart = null,
             ActionContextSettings settings = null,
             IEnumerable<ISanitizer> sanitizers = null)
         {
             OnStart = onStart;
-            Settings = settings;
+            Settings = settings ?? new ActionContextSettings();
             Sanitizers = sanitizers ?? new ISanitizer[0];
         }
 
@@ -87,7 +87,7 @@ namespace ContextRunner
         {
             var toThrow = ex;
 
-            if(!(ex is ContextException))
+            if(ex != null && !(ex is ContextException))
             {
                 context.State.SetParam("Exception", ex);
 
@@ -97,7 +97,10 @@ namespace ContextRunner
                 toThrow = new ContextException(context, $"Error occurred within the context '{context.ContextName}'!", ex);
             }
 
-            return toThrow;
+            return context.IsRoot && !Settings.WrapExceptionsWithContext && toThrow is ContextException
+                ? toThrow.InnerException
+                : toThrow;
+
         }
     }
 }

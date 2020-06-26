@@ -11,7 +11,7 @@ using ContextRunner.Base;
 
 namespace ContextRunner.NLog
 {
-    public class NlogContextRunner : ContextRunner
+    public class NlogContextRunner : ActionContextRunner
     {
         private readonly NlogContextRunnerConfig _config;
 
@@ -41,6 +41,7 @@ namespace ContextRunner.NLog
         {
             return new ActionContextSettings
             {
+                WrapExceptionsWithContext = _config.WrapExceptionsWithContext,
                 EnableContextEndMessage = _config.EnableContextEndMessage,
                 EnableContextStartMessage = _config.EnableContextStartMessage,
                 SuppressChildContextEndMessages = _config.SuppressChildContextEndMessages,

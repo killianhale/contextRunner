@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'Default' ">
+    <StartAction>Project</StartAction>
+    <ExternalConsole>true</ExternalConsole>
+    <ApplicationURL>https://localhost:20595;http://localhost:59218</ApplicationURL>
+  </PropertyGroup>
+</Project>

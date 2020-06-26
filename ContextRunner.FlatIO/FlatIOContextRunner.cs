@@ -10,7 +10,7 @@ using ContextRunner.Logging;
 
 namespace ContextRunner.FlatIO
 {
-    public class FlatIOContextRunner : ContextRunner
+    public class FlatIOContextRunner : ActionContextRunner
     {
         private readonly FlatIOContextRunnerConfig _config;
 

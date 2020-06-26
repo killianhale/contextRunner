@@ -7,6 +7,8 @@ namespace ContextRunner.Base
     {
         public ActionContextSettings()
         {
+            WrapExceptionsWithContext = true;
+
             EnableContextStartMessage = false;
             SuppressChildContextEndMessages = false;
             ContextStartMessageLevel = LogLevel.Trace;
@@ -20,6 +22,8 @@ namespace ContextRunner.Base
             SuppressContextByNameList = new string[0];
             SuppressContextsByNameUnderLevel = LogLevel.Warning;
         }
+
+        public bool WrapExceptionsWithContext { get; set; }
 
         public bool EnableContextStartMessage { get; set; }
         public bool EnableContextEndMessage { get; set; }

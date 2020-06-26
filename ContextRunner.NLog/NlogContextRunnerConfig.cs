@@ -8,6 +8,8 @@ namespace ContextRunner.NLog
     {
         public NlogContextRunnerConfig()
         {
+            WrapExceptionsWithContext = true;
+
             ContextLogNamePrefix = "context_";
             EntryLogNamePrefix = "entry_";
 
@@ -24,6 +26,8 @@ namespace ContextRunner.NLog
             SuppressContextByNameList = new string[0];
             SuppressContextsByNameUnderLevel = LogLevel.Warn;
         }
+
+        public bool WrapExceptionsWithContext { get; set; }
 
         public bool EnableContextStartMessage { get; set; }
         public bool EnableContextEndMessage { get; set; }
