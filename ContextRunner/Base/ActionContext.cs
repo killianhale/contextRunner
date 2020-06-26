@@ -5,6 +5,7 @@ using System.Threading;
 using ContextRunner.Logging;
 using ContextRunner.State;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ContextRunner.Base
 {
@@ -78,6 +79,18 @@ namespace ContextRunner.Base
         public TimeSpan TimeElapsed
         {
             get => _stopwatch.Elapsed;
+        }
+
+        public bool ShouldSuppress()
+        {
+            var isInSupressList = Settings.SuppressContextByNameList.Contains(ContextName);
+
+            var levelOfEntry = (int)Logger.GetHighestLogLevel();
+            var levelToNotify = (int)Settings.SuppressContextsByNameUnderLevel;
+
+            var entryIsUnderNotifyLevel = levelOfEntry < levelToNotify;
+
+            return isInSupressList && entryIsUnderNotifyLevel;
         }
 
         public void Dispose()

@@ -16,6 +16,9 @@ namespace ContextRunner.Base
             ContextEndMessageLevel = LogLevel.Trace;
 
             ContextErrorMessageLevel = LogLevel.Error;
+
+            SuppressContextByNameList = new string[0];
+            SuppressContextsByNameUnderLevel = LogLevel.Warning;
         }
 
         public bool EnableContextStartMessage { get; set; }
@@ -28,5 +31,8 @@ namespace ContextRunner.Base
         public LogLevel ContextEndMessageLevel { get; set; }
 
         public LogLevel ContextErrorMessageLevel { get; set; }
+
+        public string[] SuppressContextByNameList { get; set; }
+        public LogLevel SuppressContextsByNameUnderLevel { get; set; }
     }
 }

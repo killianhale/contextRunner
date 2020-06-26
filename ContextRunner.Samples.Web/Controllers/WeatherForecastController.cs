@@ -28,7 +28,7 @@ namespace ContextRunner.Samples.Web.Controllers
         {
             return await _runner.RunAction<IEnumerable<WeatherForecast>>(async context =>
             {
-                context.Logger.Warning("Simulating fetching weather information...");
+                context.Logger.Debug("Simulating fetching weather information...");
                 context.State.SetParam("WeatherInfo", new
                 {
                     Source = "National Weather Service",

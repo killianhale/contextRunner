@@ -25,9 +25,6 @@ namespace ContextRunner.NLog
             SuppressContextsByNameUnderLevel = LogLevel.Warn;
         }
 
-        public string ContextLogNamePrefix { get; set; }
-        public string EntryLogNamePrefix { get; set; }
-
         public bool EnableContextStartMessage { get; set; }
         public bool EnableContextEndMessage { get; set; }
 
@@ -41,6 +38,9 @@ namespace ContextRunner.NLog
 
         public string[] SuppressContextByNameList { get; set; }
         public LogLevel SuppressContextsByNameUnderLevel { get; set; }
+
+        public string ContextLogNamePrefix { get; set; }
+        public string EntryLogNamePrefix { get; set; }
 
         public bool AddSpacingToEntries { get; set; }
         public string[] SanitizedProperties { get; set; }

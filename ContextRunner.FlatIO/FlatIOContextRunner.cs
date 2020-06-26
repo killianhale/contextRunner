@@ -55,7 +55,7 @@ namespace ContextRunner.FlatIO
             var contextName = $"Context: {context.ContextName}";
             var timestamp = $"Timestamp: {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.ffff")}";
 
-            var entry = GetSummaryLogEntry(context);
+            var entry = context.Logger.GetSummaryLogEntry();
             var totalTime = $"TimeElapsed: {entry.TimeElapsed}";
             var highestLevel = $"Level: {GetShortLogLevel(entry.LogLevel)}";
             var summary = $"Summary: {entry.Message}";
@@ -85,52 +85,6 @@ namespace ContextRunner.FlatIO
 
             output.Flush();
             output.Close();
-        }
-
-        private ContextLogEntry GetSummaryLogEntry(ActionContext context)
-        {
-            var entries = context.Logger.LogEntries.ToList();
-
-            var search = new[] {
-                LogLevel.Critical,
-                LogLevel.Error,
-                LogLevel.Warning,
-                LogLevel.Information,
-                LogLevel.Debug,
-                LogLevel.Trace,
-            };
-
-            IEnumerable<ContextLogEntry> highest = null;
-
-            foreach (var level in search)
-            {
-                highest = entries.Where(entry => entry.LogLevel == level);
-
-                if (highest.Any())
-                {
-                    break;
-                }
-            }
-
-            var highestLevel = highest.FirstOrDefault()?.LogLevel ?? LogLevel.Trace;
-            var message = $"The context '{context.ContextName}' ended without error.";
-
-            if (highestLevel == LogLevel.Error || highestLevel == LogLevel.Critical)
-            {
-                message = highest.Count() == 1
-                    ? $"The context '{context.ContextName}' ended with an error. {highest.First().Message}"
-                    : $"The context '{context.ContextName}' ended with multiple errors.";
-            }
-            else if (highestLevel == LogLevel.Warning)
-            {
-                message = highest.Count() == 1
-                    ? $"The context '{context.ContextName}' ended with a warning. {highest.First().Message}"
-                    : $"The context '{context.ContextName}' ended with multiple warnings.";
-            }
-
-            var result = new ContextLogEntry(0, context.ContextName, message, highestLevel, context.TimeElapsed);
-
-            return result;
         }
 
         private string GetShortLogLevel(LogLevel level)

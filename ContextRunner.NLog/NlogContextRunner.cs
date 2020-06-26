@@ -47,7 +47,9 @@ namespace ContextRunner.NLog
                 SuppressChildContextStartMessages = _config.SuppressChildContextStartMessages,
                 ContextEndMessageLevel = ConvertToMsLogLevel(_config.ContextEndMessageLevel),
                 ContextStartMessageLevel = ConvertToMsLogLevel(_config.ContextStartMessageLevel),
-                ContextErrorMessageLevel = ConvertToMsLogLevel(_config.ContextErrorMessageLevel)
+                ContextErrorMessageLevel = ConvertToMsLogLevel(_config.ContextErrorMessageLevel),
+                SuppressContextByNameList = _config.SuppressContextByNameList,
+                SuppressContextsByNameUnderLevel = ConvertToMsLogLevel(_config.SuppressContextsByNameUnderLevel)
             };
         }
 
@@ -75,18 +77,12 @@ namespace ContextRunner.NLog
 
         private void LogContext(ActionContext context)
         {
-            if(!context.Logger.LogEntries.Any())
+            if(!context.Logger.LogEntries.Any() || context.ShouldSuppress())
             {
                 return;
             }
 
-            var entry = GetSummaryLogEntry(context);
-
-            if(ShouldSuppressContextBasedOnEntry(entry))
-            {
-                return;
-            }
-
+            var entry = context.Logger.GetSummaryLogEntry();
             var level = ConvertFromMsLogLevel(entry.LogLevel);
             var eventParams = GetEventParams(context);
 
@@ -108,18 +104,6 @@ namespace ContextRunner.NLog
             e.Properties.Add("entries", entries);
 
             logger.Log(e);
-        }
-
-        private bool ShouldSuppressContextBasedOnEntry(ContextLogEntry entry)
-        {
-            var isInSupressList = _config.SuppressContextByNameList.Contains(entry.ContextName);
-
-            var levelOfEntry = (int)entry.LogLevel;
-            var levelToNotify = (int)ConvertToMsLogLevel(_config.SuppressContextsByNameUnderLevel);
-
-            var entryIsUnderNotifyLevel = levelOfEntry < levelToNotify;
-
-            return isInSupressList && entryIsUnderNotifyLevel;
         }
 
         private string AddSpacing(ContextLogEntry entry)
@@ -203,52 +187,6 @@ namespace ContextRunner.NLog
             {
                 result = MsLogLevel.Critical;
             }
-
-            return result;
-        }
-
-        private ContextLogEntry GetSummaryLogEntry(ActionContext context)
-        {
-            var entries = context.Logger.LogEntries.ToList();
-
-            var search = new[] {
-                MsLogLevel.Critical,
-                MsLogLevel.Error,
-                MsLogLevel.Warning,
-                MsLogLevel.Information,
-                MsLogLevel.Debug,
-                MsLogLevel.Trace,
-            };
-
-            IEnumerable<ContextLogEntry> highest = null;
-
-            foreach(var level in search)
-            {
-                highest = entries.Where(entry => entry.LogLevel == level);
-
-                if(highest.Any())
-                {
-                    break;
-                }
-            }
-
-            var highestLevel = highest.FirstOrDefault()?.LogLevel ?? MsLogLevel.Trace;
-            var message = $"The context '{context.ContextName}' ended without error.";
-
-            if(highestLevel == MsLogLevel.Error || highestLevel == MsLogLevel.Critical)
-            {
-                message = highest.Count() == 1
-                    ? $"The context '{context.ContextName}' ended with an error. {highest.First().Message}"
-                    : $"The context '{context.ContextName}' ended with multiple errors.";
-            }
-            else if(highestLevel == MsLogLevel.Warning)
-            {
-                message = highest.Count() == 1
-                    ? $"The context '{context.ContextName}' ended with a warning. {highest.First().Message}"
-                    : $"The context '{context.ContextName}' ended with multiple warnings.";
-            }
-
-            var result = new ContextLogEntry(0, context.ContextName, message, highestLevel, context.TimeElapsed);
 
             return result;
         }
