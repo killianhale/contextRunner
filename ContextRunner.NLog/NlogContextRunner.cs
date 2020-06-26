@@ -81,6 +81,12 @@ namespace ContextRunner.NLog
             }
 
             var entry = GetSummaryLogEntry(context);
+
+            if(ShouldSuppressContextBasedOnEntry(entry))
+            {
+                return;
+            }
+
             var level = ConvertFromMsLogLevel(entry.LogLevel);
             var eventParams = GetEventParams(context);
 
@@ -102,6 +108,18 @@ namespace ContextRunner.NLog
             e.Properties.Add("entries", entries);
 
             logger.Log(e);
+        }
+
+        private bool ShouldSuppressContextBasedOnEntry(ContextLogEntry entry)
+        {
+            var isInSupressList = _config.SuppressContextByNameList.Contains(entry.ContextName);
+
+            var levelOfEntry = (int)entry.LogLevel;
+            var levelToNotify = (int)ConvertToMsLogLevel(_config.SuppressContextsByNameUnderLevel);
+
+            var entryIsUnderNotifyLevel = levelOfEntry < levelToNotify;
+
+            return isInSupressList && entryIsUnderNotifyLevel;
         }
 
         private string AddSpacing(ContextLogEntry entry)
