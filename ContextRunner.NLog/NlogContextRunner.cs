@@ -43,6 +43,8 @@ namespace ContextRunner.NLog
             {
                 EnableContextEndMessage = _config.EnableContextEndMessage,
                 EnableContextStartMessage = _config.EnableContextStartMessage,
+                SuppressChildContextEndMessages = _config.SuppressChildContextEndMessages,
+                SuppressChildContextStartMessages = _config.SuppressChildContextStartMessages,
                 ContextEndMessageLevel = ConvertToMsLogLevel(_config.ContextEndMessageLevel),
                 ContextStartMessageLevel = ConvertToMsLogLevel(_config.ContextStartMessageLevel),
                 ContextErrorMessageLevel = ConvertToMsLogLevel(_config.ContextErrorMessageLevel)
@@ -57,6 +59,20 @@ namespace ContextRunner.NLog
                 () => LogContext(context));
         }
 
+        private void LogEntry(ActionContext context, ContextLogEntry entry)
+        {
+            var prefix = _config.EntryLogNamePrefix ?? "entry_";
+            var logger = LogManager.GetLogger(prefix + entry.ContextName);
+
+            var level = ConvertFromMsLogLevel(entry.LogLevel);
+            var eventParams = GetEventParams(context, entry);
+
+            var e = new LogEventInfo(level, logger.Name, entry.Message);
+            eventParams.ToList().ForEach(x => e.Properties.Add(x.Key, x.Value));
+
+            logger.Log(e);
+        }
+
         private void LogContext(ActionContext context)
         {
             if(!context.Logger.LogEntries.Any())
@@ -64,11 +80,12 @@ namespace ContextRunner.NLog
                 return;
             }
 
-            var logger = LogManager.GetLogger($"context_{context.ContextName}");
-
             var entry = GetSummaryLogEntry(context);
             var level = ConvertFromMsLogLevel(entry.LogLevel);
             var eventParams = GetEventParams(context);
+
+            var prefix = _config.ContextLogNamePrefix ?? "context_";
+            var logger = LogManager.GetLogger(prefix + context.ContextName);
 
             var e = new LogEventInfo(level, logger.Name, entry.Message);
             eventParams.ToList().ForEach(x => e.Properties.Add(x.Key, x.Value));
@@ -102,19 +119,6 @@ namespace ContextRunner.NLog
             }
 
             return spacing + entry.Message;
-        }
-
-        private void LogEntry(ActionContext context, ContextLogEntry entry)
-        {
-            var logger = LogManager.GetLogger(entry.ContextName);
-
-            var level = ConvertFromMsLogLevel(entry.LogLevel);
-            var eventParams = GetEventParams(context, entry);
-
-            var e = new LogEventInfo(level, logger.Name, entry.Message);
-            eventParams.ToList().ForEach(x => e.Properties.Add(x.Key, x.Value));
-
-            logger.Log(e);
         }
 
         private IDictionary<object, object> GetEventParams(ActionContext context, ContextLogEntry entry = null)
@@ -157,7 +161,7 @@ namespace ContextRunner.NLog
         {
             var result = MsLogLevel.None;
 
-            if(level == LogLevel.Trace)
+            if (level == LogLevel.Trace)
             {
                 result = MsLogLevel.Trace;
             }

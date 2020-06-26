@@ -53,7 +53,9 @@ namespace ContextRunner.Base
                 Logger.TrySetContext(this);
             }
 
-            if (Settings.EnableContextStartMessage)
+            var shouldSuppressStartMessage = !IsRoot && Settings.SuppressChildContextStartMessages;
+
+            if (Settings.EnableContextStartMessage && !shouldSuppressStartMessage)
             {
                 Logger.Log(Settings.ContextStartMessageLevel,
                     $"Context {ContextName} has started.");
@@ -82,7 +84,9 @@ namespace ContextRunner.Base
         {
             _stopwatch.Stop();
 
-            if(Settings.EnableContextEndMessage)
+            var shouldSuppressEndMessage = !IsRoot && Settings.SuppressChildContextEndMessages;
+
+            if (Settings.EnableContextEndMessage && !shouldSuppressEndMessage)
             {
                 Logger.Log(Settings.ContextEndMessageLevel,
                     $"Context {ContextName} has ended.");
