@@ -4,13 +4,14 @@
     <PackOnBuild>true</PackOnBuild>
     <Authors>Killian Hale</Authors>
     <Description>A tool for wrapping actions into a context that may contain state parameters, enhancing logging and exception handling.</Description>
-    <PackageVersion>1.0.6</PackageVersion>
+    <PackageVersion>1.0.7</PackageVersion>
     <TargetFrameworks>netstandard2.1;</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="System.Reactive.Core" Version="4.4.1" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.5" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Logging\" />

@@ -13,6 +13,11 @@ namespace ContextRunner.NLog
 {
     public class NlogContextRunner : ActionContextRunner
     {
+        public static void Configure(NlogContextRunnerConfig config)
+        {
+            Runner = new NlogContextRunner(config);
+        }
+
         private readonly NlogContextRunnerConfig _config;
 
         public NlogContextRunner(NlogContextRunnerConfig config)
@@ -41,11 +46,11 @@ namespace ContextRunner.NLog
         {
             return new ActionContextSettings
             {
-                WrapExceptionsWithContext = _config.WrapExceptionsWithContext,
                 EnableContextEndMessage = _config.EnableContextEndMessage,
                 EnableContextStartMessage = _config.EnableContextStartMessage,
                 SuppressChildContextEndMessages = _config.SuppressChildContextEndMessages,
                 SuppressChildContextStartMessages = _config.SuppressChildContextStartMessages,
+                IgnoreChildSuppressionOnError = _config.IgnoreChildSuppressionOnError,
                 ContextEndMessageLevel = ConvertToMsLogLevel(_config.ContextEndMessageLevel),
                 ContextStartMessageLevel = ConvertToMsLogLevel(_config.ContextStartMessageLevel),
                 ContextErrorMessageLevel = ConvertToMsLogLevel(_config.ContextErrorMessageLevel),
@@ -58,7 +63,7 @@ namespace ContextRunner.NLog
         {
             context.Logger.WhenEntryLogged.Subscribe(
                 entry => LogEntry(context, entry),
-                exception => LogContext(context),
+                exception => LogContextWithError(context, exception),
                 () => LogContext(context));
         }
 
@@ -74,6 +79,11 @@ namespace ContextRunner.NLog
             eventParams.ToList().ForEach(x => e.Properties.Add(x.Key, x.Value));
 
             logger.Log(e);
+        }
+
+        private void LogContextWithError(ActionContext context, Exception ex)
+        {
+            LogContext(context);
         }
 
         private void LogContext(ActionContext context)

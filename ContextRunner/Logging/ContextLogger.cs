@@ -23,6 +23,8 @@ namespace ContextRunner.Logging
 
         public ConcurrentQueue<ContextLogEntry> LogEntries { get; }
 
+        public Exception ErrorToEmit { get; set; }
+
         public IObservable<ContextLogEntry> WhenEntryLogged
         {
             get => _logSubject;
@@ -42,25 +44,51 @@ namespace ContextRunner.Logging
 
         public void CompleteIfRoot()
         {
-            if (_context.IsRoot)
+            if (!_context.IsRoot)
             {
-                _logSubject.OnCompleted();
+                return;
             }
+
+            if(ErrorToEmit != null)
+            {
+                CompleteWithError();
+
+                return;
+            }
+
+            RemoveErrorOnlyEntries();
+
+            _logSubject.OnCompleted();
         }
 
-        public void CompleteWithError(Exception ex)
+        private void CompleteWithError()
         {
-            _logSubject.OnError(ex);
+            if (!_context.Settings.IgnoreChildSuppressionOnError)
+            {
+                RemoveErrorOnlyEntries();
+            }
+
+            _logSubject.OnError(ErrorToEmit);
         }
 
-        public void Log(LogLevel level, string message)
+        private void RemoveErrorOnlyEntries()
+        {
+            var nonErrorEntries = LogEntries.Where(entry => !entry.OutputOnlyWithError).ToList();
+
+            LogEntries.Clear();
+
+            nonErrorEntries.ForEach(entry => LogEntries.Enqueue(entry));
+        }
+
+        public void Log(LogLevel level, string message, bool outputOnlyWithError = false)
         {
             var entry = new ContextLogEntry(
                 _context.Depth,
                 _context.ContextName,
                 message,
                 level,
-                _context.TimeElapsed
+                _context.TimeElapsed,
+                outputOnlyWithError
             );
 
             _logSubject.OnNext(entry);
@@ -68,34 +96,34 @@ namespace ContextRunner.Logging
             LogEntries.Enqueue(entry);
         }
 
-        public void Debug(string message)
+        public void Debug(string message, bool outputOnlyWithError = false)
         {
-            Log(LogLevel.Debug, message);
+            Log(LogLevel.Debug, message, outputOnlyWithError);
         }
 
-        public void Error(string message)
+        public void Error(string message, bool outputOnlyWithError = false)
         {
-            Log(LogLevel.Error, message);
+            Log(LogLevel.Error, message, outputOnlyWithError);
         }
 
-        public void Critical(string message)
+        public void Critical(string message, bool outputOnlyWithError = false)
         {
-            Log(LogLevel.Critical, message);
+            Log(LogLevel.Critical, message, outputOnlyWithError);
         }
 
-        public void Information(string message)
+        public void Information(string message, bool outputOnlyWithError = false)
         {
-            Log(LogLevel.Information, message);
+            Log(LogLevel.Information, message, outputOnlyWithError);
         }
 
-        public void Trace(string message)
+        public void Trace(string message, bool outputOnlyWithError = false)
         {
-            Log(LogLevel.Trace, message);
+            Log(LogLevel.Trace, message, outputOnlyWithError);
         }
 
-        public void Warning(string message)
+        public void Warning(string message, bool outputOnlyWithError = false)
         {
-            Log(LogLevel.Warning, message);
+            Log(LogLevel.Warning, message, outputOnlyWithError);
         }
 
         public LogLevel GetHighestLogLevel()

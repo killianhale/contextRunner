@@ -23,9 +23,11 @@ namespace ContextRunner.Samples.Web
                 {
                     webBuilder.ConfigureLogging(options =>
                     {
+                        options.AddConsole();
+
                         options.SetMinimumLevel(LogLevel.Trace);
                     });
-                    webBuilder.UseNLog();
+                    //webBuilder.UseNLog();
                     webBuilder.UseStartup<Startup>();
                 });
     }

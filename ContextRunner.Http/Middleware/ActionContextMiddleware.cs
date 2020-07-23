@@ -18,10 +18,10 @@ namespace ContextRunner.Http.Middleware
         private readonly IContextRunner _runner;
         private readonly IOptionsMonitor<ActionContextMiddlewareConfig> _configMonitor;
 
-        public ActionContextMiddleware(RequestDelegate next, IContextRunner runner, IOptionsMonitor<ActionContextMiddlewareConfig> configMonitor)
+        public ActionContextMiddleware(RequestDelegate next, IContextRunner runner = null, IOptionsMonitor<ActionContextMiddlewareConfig> configMonitor = null)
         {
             _next = next;
-            _runner = runner;
+            _runner = runner ?? ActionContextRunner.Runner;
             _configMonitor = configMonitor;
         }
 
@@ -84,6 +84,11 @@ namespace ContextRunner.Http.Middleware
 
         private bool IsPathWhitelisted(PathString path)
         {
+            if(_configMonitor == null)
+            {
+                return true;
+            }
+
             var config = _configMonitor.CurrentValue;
             var whitelistPath = !string.IsNullOrEmpty(config?.PathPrefixWhitelist)
                 ? config.PathPrefixWhitelist
@@ -145,27 +150,9 @@ namespace ContextRunner.Http.Middleware
                 return null;
             }
 
-            object body = null;
-
             var token = JToken.Parse(responseBody);
 
-            if (token is JArray)
-            {
-                var bodyArray = token.ToArray().Select(item =>
-                {
-                    return item.ToObject<Dictionary<string, object>>();
-                }).ToArray();
-
-                body = bodyArray;
-            }
-            else if (token is JObject)
-            {
-                var bodyObject = token.ToObject<Dictionary<string, object>>();
-
-                body = bodyObject;
-            }
-
-            return body;
+            return token;
         }
 
         private async Task<string> RunNext(HttpContext httpContext)

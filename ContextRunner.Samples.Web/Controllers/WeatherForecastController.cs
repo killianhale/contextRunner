@@ -18,9 +18,9 @@ namespace ContextRunner.Samples.Web.Controllers
 
         private readonly IContextRunner _runner;
 
-        public WeatherForecastController(IContextRunner runner)
+        public WeatherForecastController(IContextRunner runner = null)
         {
-            _runner = runner;
+            _runner = runner ?? ActionContextRunner.Runner;
         }
 
         [HttpGet]

@@ -14,6 +14,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
 using Swashbuckle.AspNetCore.SwaggerUI;
@@ -76,7 +77,10 @@ namespace ContextRunner.Samples.Web
 
             services.Configure<NlogContextRunnerConfig>(Configuration.GetSection("NlogContextRunner"));
 
-            services.AddSingleton<IContextRunner, NlogContextRunner>();
+            //var settings = services.BuildServiceProvider().GetRequiredService<IOptionsMonitor<NlogContextRunnerConfig>>();
+            //NlogContextRunner.Configure(settings.CurrentValue);
+
+            services.AddSingleton<IContextRunner, ActionContextRunner>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -100,6 +104,7 @@ namespace ContextRunner.Samples.Web
             app.UseRouting();
 
             app.UseContextRunnerHttpMiddleware();
+            app.UseMiddleware<ExceptionMiddleware>();
 
             app.UseAuthorization();
 

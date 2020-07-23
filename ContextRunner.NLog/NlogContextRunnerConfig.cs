@@ -8,18 +8,18 @@ namespace ContextRunner.NLog
     {
         public NlogContextRunnerConfig()
         {
-            WrapExceptionsWithContext = true;
-
             ContextLogNamePrefix = "context_";
             EntryLogNamePrefix = "entry_";
 
             EnableContextStartMessage = false;
-            SuppressChildContextEndMessages = false;
+            SuppressChildContextStartMessages = false;
             ContextStartMessageLevel = LogLevel.Trace;
 
             EnableContextEndMessage = true;
             SuppressChildContextEndMessages = false;
             ContextEndMessageLevel = LogLevel.Trace;
+
+            IgnoreChildSuppressionOnError = true;
 
             ContextErrorMessageLevel = LogLevel.Error;
 
@@ -27,13 +27,13 @@ namespace ContextRunner.NLog
             SuppressContextsByNameUnderLevel = LogLevel.Warn;
         }
 
-        public bool WrapExceptionsWithContext { get; set; }
-
         public bool EnableContextStartMessage { get; set; }
         public bool EnableContextEndMessage { get; set; }
 
         public bool SuppressChildContextStartMessages { get; set; }
         public bool SuppressChildContextEndMessages { get; set; }
+
+        public bool IgnoreChildSuppressionOnError { get; set; }
 
         public LogLevel ContextStartMessageLevel { get; set; }
         public LogLevel ContextEndMessageLevel { get; set; }

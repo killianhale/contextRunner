@@ -55,12 +55,10 @@ namespace ContextRunner.Base
             }
 
             var shouldSuppressStartMessage = !IsRoot && Settings.SuppressChildContextStartMessages;
+            var shouldAlwaysShowStart = Settings.EnableContextStartMessage && !shouldSuppressStartMessage;
 
-            if (Settings.EnableContextStartMessage && !shouldSuppressStartMessage)
-            {
-                Logger.Log(Settings.ContextStartMessageLevel,
-                    $"Context {ContextName} has started.");
-            }
+            Logger.Log(Settings.ContextStartMessageLevel,
+                $"Context {ContextName} has started.", !shouldAlwaysShowStart);
 
             Loaded?.Invoke(this);
         }
@@ -99,11 +97,10 @@ namespace ContextRunner.Base
 
             var shouldSuppressEndMessage = !IsRoot && Settings.SuppressChildContextEndMessages;
 
-            if (Settings.EnableContextEndMessage && !shouldSuppressEndMessage)
-            {
+            var shouldAlwaysShowEnd = Settings.EnableContextEndMessage && !shouldSuppressEndMessage;
+            
                 Logger.Log(Settings.ContextEndMessageLevel,
-                    $"Context {ContextName} has ended.");
-            }
+                    $"Context {ContextName} has ended.", !shouldAlwaysShowEnd);
 
             _current.Value = _parent;
 

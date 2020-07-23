@@ -12,11 +12,26 @@ namespace ContextRunner.FlatIO
 {
     public class FlatIOContextRunner : ActionContextRunner
     {
+        public static void Configure(FlatIOContextRunnerConfig config)
+        {
+            Runner = new FlatIOContextRunner(config);
+        }
+
         private readonly FlatIOContextRunnerConfig _config;
 
         private readonly string _seperator;
 
-        public FlatIOContextRunner(IOptionsMonitor<FlatIOContextRunnerConfig> flatContextOptions) {
+        public FlatIOContextRunner(FlatIOContextRunnerConfig flatContextOptions)
+        {
+            _config = flatContextOptions;
+
+            _seperator = string.Empty.PadLeft(100, '=');
+
+            OnStart = Setup;
+        }
+
+        public FlatIOContextRunner(IOptionsMonitor<FlatIOContextRunnerConfig> flatContextOptions)
+        {
             _config = flatContextOptions.CurrentValue;
 
             _seperator = string.Empty.PadLeft(100, '=');
