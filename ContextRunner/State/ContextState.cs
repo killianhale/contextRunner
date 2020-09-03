@@ -43,6 +43,19 @@ namespace ContextRunner.State
             _params[name] = sanitized;
         }
 
+        public void AppendParam<T>(string name, T value) where T : class
+        {
+            object sanitized = value;
+
+            foreach (var sanitizer in Sanitizers)
+            {
+                sanitized = sanitizer.Sanitize(new KeyValuePair<string, object>(name, value));
+            }
+
+            var list = _params.GetOrAdd(name, new ConcurrentBag<object>()) as ConcurrentBag<object>;
+            list?.Add(sanitized);
+        }
+
         public T RemoveParam<T>(string name) where T : class
         {
             var success = _params.TryRemove(name, out object val);

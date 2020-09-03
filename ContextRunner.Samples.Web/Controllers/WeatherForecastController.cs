@@ -67,6 +67,32 @@ namespace ContextRunner.Samples.Web.Controllers
                     Source = "National Weather Service",
                     Data = "{ \"thing\": \"value of thing\" }"
                 });
+                
+                context.State.AppendParam("5DayForcast", new
+                {
+                    Source = "National Weather Service",
+                    Data = "{ \"day 1\": \"value of day 1\" }"
+                });
+                context.State.AppendParam("5DayForcast", new
+                {
+                    Source = "National Weather Service",
+                    Data = "{ \"day 2\": \"value of day 2\" }"
+                });
+                context.State.AppendParam("5DayForcast", new
+                {
+                    Source = "National Weather Service",
+                    Data = "{ \"day 3\": \"value of day 3\" }"
+                });
+                context.State.AppendParam("5DayForcast", new
+                {
+                    Source = "National Weather Service",
+                    Data = "{ \"day 4\": \"value of day 4\" }"
+                });
+                context.State.AppendParam("5DayForcast", new
+                {
+                    Source = "National Weather Service",
+                    Data = "{ \"day 5\": \"value of day 5\" }"
+                });
 
                 return forcast;
             }, "WeatherService");
