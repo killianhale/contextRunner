@@ -27,7 +27,7 @@ namespace ContextRunner.Samples.Web
 
                         options.SetMinimumLevel(LogLevel.Trace);
                     });
-                    //webBuilder.UseNLog();
+                    webBuilder.UseNLog();
                     webBuilder.UseStartup<Startup>();
                 });
     }

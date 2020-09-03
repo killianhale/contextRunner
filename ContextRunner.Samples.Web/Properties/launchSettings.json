@@ -19,10 +19,10 @@
     "ContextRunner.Samples.Web": {
       "commandName": "Project",
       "launchBrowser": true,
+      "applicationUrl": "https://localhost:20595;http://localhost:59218",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
-      },
-      "applicationUrl": "https://localhost:20595;http://localhost:59218"
+      }
     }
   }
 }

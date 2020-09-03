@@ -77,10 +77,7 @@ namespace ContextRunner.Samples.Web
 
             services.Configure<NlogContextRunnerConfig>(Configuration.GetSection("NlogContextRunner"));
 
-            //var settings = services.BuildServiceProvider().GetRequiredService<IOptionsMonitor<NlogContextRunnerConfig>>();
-            //NlogContextRunner.Configure(settings.CurrentValue);
-
-            services.AddSingleton<IContextRunner, ActionContextRunner>();
+            services.AddSingleton<IContextRunner, NlogContextRunner>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
@@ -42,22 +43,26 @@ namespace ContextRunner.State.Sanitizers
                 return null;
             }
 
-            object lookupObj = obj;
+            var lookupObj = obj;
 
-            if (obj is JArray)
+
+            if (obj is JValue jVal)
             {
-                var token = obj as JToken;
-
-                var bodyArray = token.ToArray().Select(item =>
-                {
-                    return item.ToObject<Dictionary<string, object>>();
-                }).ToArray();
+                return jVal.Value;
+            }
+            else if (obj is JArray jArray)
+            {
+                var token = (JToken) obj;
+                
+                var bodyArray = token.ToArray().Select(item => jArray.Children().FirstOrDefault()?.Type == JTokenType.Object
+                    ? item.ToObject<Dictionary<string, object>>()
+                    : item as object).ToArray();
 
                 lookupObj = bodyArray;
             }
             else if (obj is JObject)
             {
-                var token = obj as JToken;
+                var token = (JToken) obj;
 
                 var bodyObject = token.ToObject<Dictionary<string, object>>();
 
@@ -74,31 +79,27 @@ namespace ContextRunner.State.Sanitizers
             {
                 return GetDictionary((IDictionary<string, object>)lookupObj);
             }
-            else if (lookupObj is IReadOnlyDictionary<string, object>)
+            else if (lookupObj is IReadOnlyDictionary<string, object> roDict)
             {
-                var roDict = lookupObj as IReadOnlyDictionary<string, object>;
-
                 var dict = roDict.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
                 return GetDictionary(dict);
             }
-            else if (lookupObj is IDictionary<string, object>)
+            else if (lookupObj is IDictionary<string, object> dictionary)
             {
-                return GetDictionary(lookupObj as IDictionary<string, object>);
+                return GetDictionary(dictionary);
             }
-            else if(lookupObj is System.Collections.IEnumerable)
+            else if(lookupObj is IEnumerable enumerable)
             {
-                var enumerable = lookupObj as System.Collections.IEnumerable;
-
                 var result = new List<object>(enumerable.Cast<object>())
                     .Select(item => SanitizeParam(null, item))
                     .ToList();
 
                 return result;
             }
-            else if(lookupObj is Exception)
+            else if(lookupObj is Exception exception)
             {
-                return GetException(type, lookupObj as Exception);
+                return GetException(type, exception);
             }
             else if (type.IsClass)
             {
