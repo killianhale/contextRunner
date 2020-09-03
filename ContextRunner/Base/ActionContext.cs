@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -14,7 +15,7 @@ namespace ContextRunner.Base
 
     public class ActionContext : IDisposable
     {
-        private static readonly AsyncLocal<ActionContext> _current = new AsyncLocal<ActionContext>();
+        private static readonly ConcurrentDictionary<string, AsyncLocal<ActionContext>> _namedContexts = new ConcurrentDictionary<string, AsyncLocal<ActionContext>>();
 
         public static event ContextLoadedHandler Loaded;
         public static event ContextUnloadedHandler Unloaded;
@@ -22,7 +23,16 @@ namespace ContextRunner.Base
         private readonly Stopwatch _stopwatch;
         private readonly ActionContext _parent;
 
+
         public ActionContext(
+            [CallerMemberName] string name = null,
+            ActionContextSettings settings = null,
+            IEnumerable<ISanitizer> logSanitizers = null)
+        : this("default", name, settings, logSanitizers)
+        {}
+
+        public ActionContext(
+            string contextGroupName = "default",
             [CallerMemberName]string name = null,
             ActionContextSettings settings = null,
             IEnumerable<ISanitizer> logSanitizers = null)
@@ -30,10 +40,11 @@ namespace ContextRunner.Base
             _stopwatch = new Stopwatch();
             _stopwatch.Start();
 
-            _parent = _current.Value;
-            _current.Value = this;
+            _parent = _namedContexts.GetOrAdd(contextGroupName, new AsyncLocal<ActionContext>()).Value;
+            _namedContexts[contextGroupName].Value = this;
 
             ContextName = name;
+            ContextGroupName = contextGroupName;
             
             if(IsRoot)
             {
@@ -69,6 +80,7 @@ namespace ContextRunner.Base
 
         public int Depth { get; }
         public string ContextName { get; }
+        public string ContextGroupName { get; }
 
         public bool IsRoot {
             get => _parent == null;
@@ -102,7 +114,7 @@ namespace ContextRunner.Base
                 Logger.Log(Settings.ContextEndMessageLevel,
                     $"Context {ContextName} has ended.", !shouldAlwaysShowEnd);
 
-            _current.Value = _parent;
+            _namedContexts[ContextGroupName].Value = _parent;
 
             Logger.CompleteIfRoot();
             Logger.TrySetContext(_parent);

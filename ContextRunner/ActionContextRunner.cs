@@ -108,9 +108,9 @@ namespace ContextRunner
             Console.WriteLine(logline);
         }
 
-        public void RunAction(Action<ActionContext> action, [CallerMemberName]string name = null)
+        public void RunAction(Action<ActionContext> action, [CallerMemberName]string name = null, string contextGroupName = "default")
         {
-            using (var context = new ActionContext(name, Settings, Sanitizers))
+            using (var context = new ActionContext(contextGroupName, name, Settings, Sanitizers))
             {
                 try
                 {
@@ -128,9 +128,9 @@ namespace ContextRunner
             };
         }
 
-        public async Task RunAction(Func<ActionContext, Task> action, [CallerMemberName]string name = null)
+        public async Task RunAction(Func<ActionContext, Task> action, [CallerMemberName]string name = null, string contextGroupName = "default")
         {
-            using (var context = new ActionContext(name, Settings, Sanitizers))
+            using (var context = new ActionContext(contextGroupName, name, Settings, Sanitizers))
             {
                 try
                 {
@@ -148,9 +148,9 @@ namespace ContextRunner
             };
         }
 
-        public async Task<T> RunAction<T>(Func<ActionContext, Task<T>> action, [CallerMemberName]string name = null)
+        public async Task<T> RunAction<T>(Func<ActionContext, Task<T>> action, [CallerMemberName]string name = null, string contextGroupName = "default")
         {
-            using (var context = new ActionContext(name, Settings, Sanitizers))
+            using (var context = new ActionContext(contextGroupName, name, Settings, Sanitizers))
             {
                 try
                 {
