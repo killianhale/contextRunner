@@ -156,7 +156,7 @@ namespace ContextRunner.Logging
 
         public ContextLogEntry GetSummaryLogEntry()
         {
-            var message = $"The context '{_context.ContextName}' ended without error.";
+            var message = $"The context '{_context.ContextName}' ended successfully.";
 
             var highestLevel = GetHighestLogLevel();
             var highestLevelCount = LogEntries.Count(entry => entry.LogLevel == highestLevel);

@@ -8,6 +8,7 @@ using ContextRunner.Logging;
 using ContextRunner.State;
 using ContextRunner.State.Sanitizers;
 using ContextRunner.Base;
+using NLog.Config;
 
 namespace ContextRunner.NLog
 {
@@ -73,7 +74,7 @@ namespace ContextRunner.NLog
             var logger = LogManager.GetLogger(prefix + entry.ContextName);
 
             var level = ConvertFromMsLogLevel(entry.LogLevel);
-            var eventParams = GetEventParams(context, entry);
+            var eventParams = GetEventParams(context, false, entry);
 
             var e = new LogEventInfo(level, logger.Name, entry.Message);
             eventParams.ToList().ForEach(x => e.Properties.Add(x.Key, x.Value));
@@ -95,7 +96,7 @@ namespace ContextRunner.NLog
 
             var entry = context.Logger.GetSummaryLogEntry();
             var level = ConvertFromMsLogLevel(entry.LogLevel);
-            var eventParams = GetEventParams(context);
+            var eventParams = GetEventParams(context, true);
 
             var prefix = _config.ContextLogNamePrefix ?? "context_";
             var logger = LogManager.GetLogger(prefix + context.ContextName);
@@ -134,7 +135,7 @@ namespace ContextRunner.NLog
             return spacing + entry.Message;
         }
 
-        private IDictionary<object, object> GetEventParams(ActionContext context, ContextLogEntry entry = null)
+        private IDictionary<object, object> GetEventParams(ActionContext context, bool isContext, ContextLogEntry entry = null)
         {
             var result = new Dictionary<object, object>();
 
@@ -143,8 +144,16 @@ namespace ContextRunner.NLog
                 result.Add("contextDepth", entry?.ContextDepth ?? context.Depth);
             }
 
-            result.Add("contextName", entry?.ContextName ?? context.ContextName);
             result.Add("timeElapsed", entry?.TimeElapsed ?? context.TimeElapsed);
+            if (isContext)
+            {
+                result.Add("contextGroupName", context.ContextGroupName);
+                result.Add("baseContextName", context.ContextName);
+            }
+            else
+            {
+                result.Add("contextName", entry?.ContextName ?? context.ContextName);
+            }
 
             var sanitizedParams = context.State.Params
                 .Select(p => new KeyValuePair<string, object>($"{p.Key.Substring(0, 1).ToLower()}{p.Key.Substring(1)}", p.Value))
