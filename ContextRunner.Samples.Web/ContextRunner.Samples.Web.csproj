@@ -9,6 +9,7 @@
     <DocumentationFile>bin\Debug\netcoreapp3.1\ContextRunner.Samples.Web.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\ContextRunner.FlatIO\ContextRunner.FlatIO.csproj" />
     <ProjectReference Include="..\ContextRunner.Http\ContextRunner.Http.csproj">
       <GlobalPropertiesToRemove></GlobalPropertiesToRemove>
     </ProjectReference>

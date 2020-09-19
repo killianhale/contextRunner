@@ -19,19 +19,20 @@ namespace ContextRunner
         }
 
         public static void Configure(
-            Action<ActionContext> onStart = null,
+            Action<IActionContext> onStart = null,
             ActionContextSettings settings = null,
             IEnumerable<ISanitizer> sanitizers = null)
         {
             Runner = new ActionContextRunner(onStart, settings, sanitizers);
         }
 
-        protected Action<ActionContext> OnStart { get; set; }
+        protected Action<IActionContext> OnStart { get; set; }
+        protected Action<IActionContext> OnEnd{ get; set; }
         protected ActionContextSettings Settings { get; set; }
         protected IEnumerable<ISanitizer> Sanitizers { get; set; }
 
         public ActionContextRunner(
-            Action<ActionContext> onStart = null,
+            Action<IActionContext> onStart = null,
             ActionContextSettings settings = null,
             IEnumerable<ISanitizer> sanitizers = null)
         {
@@ -40,7 +41,7 @@ namespace ContextRunner
             Sanitizers = sanitizers ?? new ISanitizer[0];
         }
 
-        private void Setup(ActionContext context)
+        private void Setup(IActionContext context)
         {
             context.Logger.WhenEntryLogged.Subscribe(
                 _ => { },
@@ -48,7 +49,7 @@ namespace ContextRunner
                 () => LogContext(context));
         }
 
-        private void LogContext(ActionContext context)
+        private void LogContext(IActionContext context)
         {
             if (!context.Logger.LogEntries.Any() || context.ShouldSuppress())
             {
@@ -108,7 +109,7 @@ namespace ContextRunner
             Console.WriteLine(logline);
         }
 
-        public void RunAction(Action<ActionContext> action, [CallerMemberName]string name = null, string contextGroupName = "default")
+        public void RunAction(Action<IActionContext> action, [CallerMemberName]string name = null, string contextGroupName = "default")
         {
             using (var context = new ActionContext(contextGroupName, name, Settings, Sanitizers))
             {
@@ -120,6 +121,8 @@ namespace ContextRunner
                     }
 
                     action?.Invoke(context);
+                    
+                    OnEnd?.Invoke(context);
                 }
                 catch (Exception ex)
                 {
@@ -128,7 +131,7 @@ namespace ContextRunner
             };
         }
 
-        public async Task RunAction(Func<ActionContext, Task> action, [CallerMemberName]string name = null, string contextGroupName = "default")
+        public async Task RunAction(Func<IActionContext, Task> action, [CallerMemberName]string name = null, string contextGroupName = "default")
         {
             using (var context = new ActionContext(contextGroupName, name, Settings, Sanitizers))
             {
@@ -140,6 +143,8 @@ namespace ContextRunner
                     }
 
                     await action?.Invoke(context);
+                    
+                    OnEnd?.Invoke(context);
                 }
                 catch (Exception ex)
                 {
@@ -148,7 +153,7 @@ namespace ContextRunner
             };
         }
 
-        public async Task<T> RunAction<T>(Func<ActionContext, Task<T>> action, [CallerMemberName]string name = null, string contextGroupName = "default")
+        public async Task<T> RunAction<T>(Func<IActionContext, Task<T>> action, [CallerMemberName]string name = null, string contextGroupName = "default")
         {
             using (var context = new ActionContext(contextGroupName, name, Settings, Sanitizers))
             {
@@ -159,7 +164,11 @@ namespace ContextRunner
                         OnStart?.Invoke(context);
                     }
 
-                    return await action?.Invoke(context);
+                    var result = await action?.Invoke(context);
+                    
+                    OnEnd?.Invoke(context);
+
+                    return result;
                 }
                 catch (Exception ex)
                 {
@@ -168,7 +177,7 @@ namespace ContextRunner
             };
         }
 
-        private Exception HandleError(Exception ex, ActionContext context)
+        private Exception HandleError(Exception ex, IActionContext context)
         {
             var wasHandled = ex.Data.Contains("ContextExceptionHandled");
 

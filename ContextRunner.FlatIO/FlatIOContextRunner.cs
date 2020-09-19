@@ -10,7 +10,7 @@ using ContextRunner.Logging;
 
 namespace ContextRunner.FlatIO
 {
-    public class FlatIOContextRunner : ActionContextRunner
+    public class FlatIOContextRunner : ActionContextRunner, IDisposable
     {
         public static void Configure(FlatIOContextRunnerConfig config)
         {
@@ -20,6 +20,7 @@ namespace ContextRunner.FlatIO
         private readonly FlatIOContextRunnerConfig _config;
 
         private readonly string _seperator;
+        private IDisposable _logHandle;
 
         public FlatIOContextRunner(FlatIOContextRunnerConfig flatContextOptions)
         {
@@ -28,6 +29,7 @@ namespace ContextRunner.FlatIO
             _seperator = string.Empty.PadLeft(100, '=');
 
             OnStart = Setup;
+            OnEnd = Teardown;
         }
 
         public FlatIOContextRunner(IOptionsMonitor<FlatIOContextRunnerConfig> flatContextOptions)
@@ -37,17 +39,23 @@ namespace ContextRunner.FlatIO
             _seperator = string.Empty.PadLeft(100, '=');
 
             OnStart = Setup;
+            OnEnd = Teardown;
         }
 
-        private void Setup(ActionContext context)
+        private void Setup(IActionContext context)
         {
-            context.Logger.WhenEntryLogged.Subscribe(
+            _logHandle = context.Logger.WhenEntryLogged.Subscribe(
                 _ => { },
                 exception => LogContext(context),
                 () => LogContext(context));
         }
 
-        private void LogContext(ActionContext context)
+        private void Teardown(IActionContext context)
+        {
+            Dispose();
+        }
+
+        private void LogContext(IActionContext context)
         {
             if (!context.Logger.LogEntries.Any())
             {
@@ -128,6 +136,11 @@ namespace ContextRunner.FlatIO
             }
 
             return spacing + entry.Message;
+        }
+
+        public void Dispose()
+        {
+            _logHandle?.Dispose();
         }
     }
 }

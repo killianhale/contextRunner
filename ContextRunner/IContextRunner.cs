@@ -7,8 +7,8 @@ namespace ContextRunner
 {
     public interface IContextRunner
     {
-        void RunAction(Action<ActionContext> action, [CallerMemberName] string name = null, string contextGroupName = "default");
-        Task RunAction(Func<ActionContext, Task> action, [CallerMemberName] string name = null, string contextGroupName = "default");
-        Task<T> RunAction<T>(Func<ActionContext, Task<T>> action, [CallerMemberName] string name = null, string contextGroupName = "default");
+        void RunAction(Action<IActionContext> action, [CallerMemberName] string name = null, string contextGroupName = "default");
+        Task RunAction(Func<IActionContext, Task> action, [CallerMemberName] string name = null, string contextGroupName = "default");
+        Task<T> RunAction<T>(Func<IActionContext, Task<T>> action, [CallerMemberName] string name = null, string contextGroupName = "default");
     }
 }

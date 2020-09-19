@@ -12,7 +12,7 @@ using NLog.Config;
 
 namespace ContextRunner.NLog
 {
-    public class NlogContextRunner : ActionContextRunner
+    public class NlogContextRunner : ActionContextRunner, IDisposable
     {
         public static void Configure(NlogContextRunnerConfig config)
         {
@@ -20,12 +20,14 @@ namespace ContextRunner.NLog
         }
 
         private readonly NlogContextRunnerConfig _config;
+        private IDisposable _logHandle;
 
         public NlogContextRunner(NlogContextRunnerConfig config)
         {
             _config = config;
 
             OnStart = Setup;
+            OnEnd = Teardown;
             Settings = GetActionContextSettings();
             Sanitizers = _config?.SanitizedProperties != null && _config.SanitizedProperties.Length > 0
                 ? new[] { new KeyBasedSanitizer(_config.SanitizedProperties) }
@@ -37,6 +39,7 @@ namespace ContextRunner.NLog
             _config = options.CurrentValue;
 
             OnStart = Setup;
+            OnEnd = Teardown;
             Settings = GetActionContextSettings();
             Sanitizers = _config?.SanitizedProperties != null && _config.SanitizedProperties.Length > 0
                 ? new[] { new KeyBasedSanitizer(_config.SanitizedProperties) }
@@ -60,15 +63,20 @@ namespace ContextRunner.NLog
             };
         }
 
-        private void Setup(ActionContext context)
+        private void Setup(IActionContext context)
         {
-            context.Logger.WhenEntryLogged.Subscribe(
+            _logHandle = context.Logger.WhenEntryLogged.Subscribe(
                 entry => LogEntry(context, entry),
                 exception => LogContextWithError(context, exception),
                 () => LogContext(context));
         }
 
-        private void LogEntry(ActionContext context, ContextLogEntry entry)
+        private void Teardown(IActionContext context)
+        {
+            Dispose();
+        }
+
+        private void LogEntry(IActionContext context, ContextLogEntry entry)
         {
             var prefix = _config.EntryLogNamePrefix ?? "entry_";
             var logger = LogManager.GetLogger(prefix + entry.ContextName);
@@ -80,14 +88,15 @@ namespace ContextRunner.NLog
             eventParams.ToList().ForEach(x => e.Properties.Add(x.Key, x.Value));
 
             logger.Log(e);
+            LogManager.Shutdown();
         }
 
-        private void LogContextWithError(ActionContext context, Exception ex)
+        private void LogContextWithError(IActionContext context, Exception ex)
         {
             LogContext(context);
         }
 
-        private void LogContext(ActionContext context)
+        private void LogContext(IActionContext context)
         {
             if(!context.Logger.LogEntries.Any() || context.ShouldSuppress())
             {
@@ -116,6 +125,7 @@ namespace ContextRunner.NLog
             e.Properties.Add("entries", entries);
 
             logger.Log(e);
+            LogManager.Shutdown();
         }
 
         private string AddSpacing(ContextLogEntry entry)
@@ -135,7 +145,7 @@ namespace ContextRunner.NLog
             return spacing + entry.Message;
         }
 
-        private IDictionary<object, object> GetEventParams(ActionContext context, bool isContext, ContextLogEntry entry = null)
+        private IDictionary<object, object> GetEventParams(IActionContext context, bool isContext, ContextLogEntry entry = null)
         {
             var result = new Dictionary<object, object>();
 
@@ -209,6 +219,11 @@ namespace ContextRunner.NLog
             }
 
             return result;
+        }
+
+        public void Dispose()
+        {
+            _logHandle?.Dispose();
         }
     }
 }

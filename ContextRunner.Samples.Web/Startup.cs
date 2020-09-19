@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using ContextRunner.FlatIO;
 using ContextRunner.Http;
 using ContextRunner.NLog;
 using Microsoft.AspNetCore.Builder;
@@ -76,8 +77,11 @@ namespace ContextRunner.Samples.Web
             services.AddSwaggerGenNewtonsoftSupport();
 
             services.Configure<NlogContextRunnerConfig>(Configuration.GetSection("NlogContextRunner"));
+            services.Configure<FlatIOContextRunnerConfig>(Configuration.GetSection("FlatIOContextRunner"));
 
-            services.AddSingleton<IContextRunner, NlogContextRunner>();
+            services.AddSingleton<IContextRunner, ActionContextRunner>();
+            // services.AddSingleton<IContextRunner, NlogContextRunner>();
+            // services.AddSingleton<IContextRunner, FlatIOContextRunner>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

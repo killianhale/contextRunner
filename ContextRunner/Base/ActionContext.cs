@@ -13,7 +13,7 @@ namespace ContextRunner.Base
     public delegate void ContextLoadedHandler(ActionContext context);
     public delegate void ContextUnloadedHandler(ActionContext context);
 
-    public class ActionContext : IDisposable
+    public class ActionContext : IDisposable, IActionContext
     {
         private static readonly ConcurrentDictionary<string, AsyncLocal<ActionContext>> _namedContexts = new ConcurrentDictionary<string, AsyncLocal<ActionContext>>();
 
@@ -75,8 +75,8 @@ namespace ContextRunner.Base
         }
 
         public ActionContextSettings Settings { get; }
-        public ContextLogger Logger { get; }
-        public ContextState State { get; }
+        public ContextLogger Logger { get; private set; }
+        public ContextState State { get; private set; }
 
         public int Depth { get; }
         public string ContextName { get; }
@@ -118,6 +118,15 @@ namespace ContextRunner.Base
 
             Logger.CompleteIfRoot();
             Logger.TrySetContext(_parent);
+
+            if (IsRoot)
+            {
+                Logger = null;
+                State = null;
+                
+                _namedContexts.Remove(ContextGroupName, out _);
+                var test = true;
+            }
 
             Unloaded?.Invoke(this);
         }
