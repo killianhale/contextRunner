@@ -10,18 +10,18 @@ using System.Linq;
 
 namespace ContextRunner.Base
 {
-    public delegate void ContextLoadedHandler(ActionContext context);
-    public delegate void ContextUnloadedHandler(ActionContext context);
+    public delegate void ContextLoadedHandler(IActionContext context);
+    public delegate void ContextUnloadedHandler(IActionContext context);
 
     public class ActionContext : IDisposable, IActionContext
     {
-        private static readonly ConcurrentDictionary<string, AsyncLocal<ActionContext>> _namedContexts = new ConcurrentDictionary<string, AsyncLocal<ActionContext>>();
+        private static readonly ConcurrentDictionary<string, AsyncLocal<IActionContext>> _namedContexts = new ConcurrentDictionary<string, AsyncLocal<IActionContext>>();
 
         public static event ContextLoadedHandler Loaded;
         public static event ContextUnloadedHandler Unloaded;
 
         private readonly Stopwatch _stopwatch;
-        private readonly ActionContext _parent;
+        private readonly IActionContext _parent;
 
 
         public ActionContext(
@@ -40,7 +40,7 @@ namespace ContextRunner.Base
             _stopwatch = new Stopwatch();
             _stopwatch.Start();
 
-            _parent = _namedContexts.GetOrAdd(contextGroupName, new AsyncLocal<ActionContext>()).Value;
+            _parent = _namedContexts.GetOrAdd(contextGroupName, new AsyncLocal<IActionContext>()).Value;
             _namedContexts[contextGroupName].Value = this;
 
             ContextName = name;
@@ -75,8 +75,8 @@ namespace ContextRunner.Base
         }
 
         public ActionContextSettings Settings { get; }
-        public ContextLogger Logger { get; private set; }
-        public ContextState State { get; private set; }
+        public IContextLogger Logger { get; private set; }
+        public IContextState State { get; private set; }
 
         public int Depth { get; }
         public string ContextName { get; }

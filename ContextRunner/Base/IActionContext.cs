@@ -7,8 +7,8 @@ namespace ContextRunner.Base
     public interface IActionContext
     {
         ActionContextSettings Settings { get; }
-        ContextLogger Logger { get; }
-        ContextState State { get; }
+        IContextLogger Logger { get; }
+        IContextState State { get; }
         int Depth { get; }
         string ContextName { get; }
         string ContextGroupName { get; }

@@ -5,7 +5,7 @@ using System.Collections.ObjectModel;
 
 namespace ContextRunner.State
 {
-    public class ContextState
+    public class ContextState : IContextState
     {
         private readonly ConcurrentDictionary<string, object> _params;
 

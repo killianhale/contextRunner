@@ -8,12 +8,12 @@ using System.Linq;
 
 namespace ContextRunner.Logging
 {
-    public class ContextLogger
+    public class ContextLogger : IContextLogger
     {
-        private ActionContext _context;
+        private IActionContext _context;
         private readonly Subject<ContextLogEntry> _logSubject;
 
-        public ContextLogger(ActionContext context)
+        public ContextLogger(IActionContext context)
         {
             _context = context;
             _logSubject = new Subject<ContextLogEntry>();
@@ -30,7 +30,7 @@ namespace ContextRunner.Logging
             get => _logSubject;
         }
 
-        public bool TrySetContext(ActionContext context)
+        public bool TrySetContext(IActionContext context)
         {
             if(context == null)
             {
