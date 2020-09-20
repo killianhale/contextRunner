@@ -91,9 +91,15 @@ namespace ContextRunner.FlatIO
             output.WriteLine($" {highestLevel}");
             output.WriteLine($" {summary}");
             output.WriteLine(_seperator);
-
+            
             foreach(var p in context.State.Params)
             {
+                if (p.Value is Exception ex)
+                {
+                    ex.Data["ContextParams"] = null;
+                    ex.Data["ContextEntries"] = null;
+                }
+                
                 output.WriteLine($"\t{p.Key}: {p.Value}");
             }
 

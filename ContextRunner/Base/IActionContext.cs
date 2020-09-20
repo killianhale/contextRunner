@@ -12,6 +12,9 @@ namespace ContextRunner.Base
         int Depth { get; }
         string ContextName { get; }
         string ContextGroupName { get; }
+        Guid Id { get; }
+        Guid CorrelationId { get; }
+        Guid CausationId { get; }
         bool IsRoot { get; }
         TimeSpan TimeElapsed { get; }
         bool ShouldSuppress();

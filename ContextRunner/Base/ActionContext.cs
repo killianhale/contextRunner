@@ -45,6 +45,10 @@ namespace ContextRunner.Base
 
             ContextName = name;
             ContextGroupName = contextGroupName;
+
+            Id = Guid.NewGuid();
+            CausationId = _parent?.Id ?? Id;
+            CorrelationId = _parent?.CorrelationId ?? CausationId;
             
             if(IsRoot)
             {
@@ -81,6 +85,10 @@ namespace ContextRunner.Base
         public int Depth { get; }
         public string ContextName { get; }
         public string ContextGroupName { get; }
+        
+        public Guid Id { get; }
+        public Guid CorrelationId { get; }
+        public Guid CausationId { get; }
 
         public bool IsRoot {
             get => _parent == null;

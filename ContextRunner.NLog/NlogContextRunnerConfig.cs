@@ -48,5 +48,7 @@ namespace ContextRunner.NLog
 
         public bool AddSpacingToEntries { get; set; }
         public string[] SanitizedProperties { get; set; }
+        
+        public string MemoryTargetLogName { get; set; }
     }
 }

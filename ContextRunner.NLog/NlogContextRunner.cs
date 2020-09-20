@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using NLog;
@@ -9,6 +10,7 @@ using ContextRunner.State;
 using ContextRunner.State.Sanitizers;
 using ContextRunner.Base;
 using NLog.Config;
+using NLog.Targets;
 
 namespace ContextRunner.NLog
 {
@@ -18,9 +20,17 @@ namespace ContextRunner.NLog
         {
             Runner = new NlogContextRunner(config);
         }
+        
+        public static readonly ConcurrentQueue<(DateTime Timestamp, ContextLogEntry LogEntry)> OutOfContextLogs = new ConcurrentQueue<(DateTime, ContextLogEntry)>();
+        public static readonly ConcurrentDictionary<Guid, DateTime> ContextStartTimestamps = new ConcurrentDictionary<Guid, DateTime>();
 
         private readonly NlogContextRunnerConfig _config;
+        private readonly MemoryTarget _memoryLogTarget;
         private IDisposable _logHandle;
+
+        public NlogContextRunner(IOptionsMonitor<NlogContextRunnerConfig> options) : this(options.CurrentValue)
+        {
+        }
 
         public NlogContextRunner(NlogContextRunnerConfig config)
         {
@@ -32,18 +42,11 @@ namespace ContextRunner.NLog
             Sanitizers = _config?.SanitizedProperties != null && _config.SanitizedProperties.Length > 0
                 ? new[] { new KeyBasedSanitizer(_config.SanitizedProperties) }
                 : new[] { new KeyBasedSanitizer(new string[0]) };
-        }
 
-        public NlogContextRunner(IOptionsMonitor<NlogContextRunnerConfig> options)
-        {
-            _config = options.CurrentValue;
-
-            OnStart = Setup;
-            OnEnd = Teardown;
-            Settings = GetActionContextSettings();
-            Sanitizers = _config?.SanitizedProperties != null && _config.SanitizedProperties.Length > 0
-                ? new[] { new KeyBasedSanitizer(_config.SanitizedProperties) }
-                : new[] { new KeyBasedSanitizer(new string[0]) };
+            if (!string.IsNullOrEmpty(_config?.MemoryTargetLogName))
+            {
+                _memoryLogTarget = LogManager.Configuration.FindTargetByName(_config.MemoryTargetLogName) as MemoryTarget;
+            }
         }
 
         private ActionContextSettings GetActionContextSettings()
@@ -65,6 +68,8 @@ namespace ContextRunner.NLog
 
         private void Setup(IActionContext context)
         {
+            ContextStartTimestamps[context.Id] = DateTime.Now;
+            
             _logHandle = context.Logger.WhenEntryLogged.Subscribe(
                 entry => LogEntry(context, entry),
                 exception => LogContextWithError(context, exception),
@@ -74,11 +79,14 @@ namespace ContextRunner.NLog
         private void Teardown(IActionContext context)
         {
             LogManager.Flush();
-            LogManager.Shutdown();
+            
+            RemoveIrrelevantMemoryLogs();
         }
 
         private void LogEntry(IActionContext context, ContextLogEntry entry)
         {
+            GetPendingMemoryLogs();
+            
             var prefix = _config.EntryLogNamePrefix ?? "entry_";
             var logger = LogManager.GetLogger(prefix + entry.ContextName);
 
@@ -99,7 +107,14 @@ namespace ContextRunner.NLog
 
         private void LogContext(IActionContext context)
         {
-            if(!context.Logger.LogEntries.Any() || context.ShouldSuppress())
+            if(context.ShouldSuppress())
+            {
+                return;
+            }
+            
+            GetPendingMemoryLogs();
+            
+            if(!context.Logger.LogEntries.Any())
             {
                 return;
             }
@@ -111,10 +126,15 @@ namespace ContextRunner.NLog
             var prefix = _config.ContextLogNamePrefix ?? "context_";
             var logger = LogManager.GetLogger(prefix + context.ContextName);
 
-            var e = new LogEventInfo(level, logger.Name, entry.Message);
-            eventParams.ToList().ForEach(x => e.Properties.Add(x.Key, x.Value));
+            var @event = new LogEventInfo(level, logger.Name, entry.Message);
+            eventParams.ToList().ForEach(x =>  @event.Properties.Add(x.Key, x.Value));
 
-            var entries = context.Logger.LogEntries
+            var timestamp = ContextStartTimestamps.GetOrAdd(context.Id, _ => DateTime.Now);
+            var logs = GetMemoryLogsSince(timestamp);
+            
+            logs.AddRange(context.Logger.LogEntries);
+            
+            var entries = logs
                 .Select(e => new
                 {
                     Level = ConvertFromMsLogLevel(e.LogLevel).ToString(),
@@ -123,11 +143,13 @@ namespace ContextRunner.NLog
                     e.TimeElapsed
                 });
 
-            e.Properties.Add("entries", entries);
+            @event.Properties.Add("entries", entries);
 
-            logger.Log(e);
+            logger.Log(@event);
 
             LogManager.Flush();
+            
+            ContextStartTimestamps.Remove(context.Id, out _);
         }
 
         private string AddSpacing(ContextLogEntry entry)
@@ -161,10 +183,22 @@ namespace ContextRunner.NLog
             {
                 result.Add("contextGroupName", context.ContextGroupName);
                 result.Add("baseContextName", context.ContextName);
+                result.Add("contextId", context.Id);
             }
             else
             {
                 result.Add("contextName", entry?.ContextName ?? context.ContextName);
+                result.Add("contextId", context.Id);
+                result.Add("contextCausationId", context.CausationId);
+                result.Add("contextCorrelationId", context.CorrelationId);
+            }
+
+            foreach (var kvp in context.State.Params)
+            {
+                if (!(kvp.Value is Exception ex)) continue;
+                
+                ex.Data["ContextParams"] = null;
+                ex.Data["ContextEntries"] = null;
             }
 
             var sanitizedParams = context.State.Params
@@ -173,6 +207,8 @@ namespace ContextRunner.NLog
                 .ToList();
 
             sanitizedParams.ForEach(p => result.Add(p.Key, p.Value));
+
+            LogManager.Flush();
 
             return result;
         }
@@ -223,9 +259,53 @@ namespace ContextRunner.NLog
             return result;
         }
 
+        private void GetPendingMemoryLogs()
+        {
+            if (_memoryLogTarget == null)
+            {
+                return;
+            }
+
+            var logCopy = new List<string>();
+            
+            _memoryLogTarget.Logs.ToList().ForEach(l => logCopy.Add(l));
+            _memoryLogTarget.Logs.Clear();
+
+            logCopy.Select(log => (DateTime.Now, new ContextLogEntry(-1, null, log, MsLogLevel.Information, TimeSpan.Zero, false)))
+                .ToList()
+                .ForEach(entry => OutOfContextLogs.Enqueue(entry));
+        }
+
+        private void RemoveIrrelevantMemoryLogs()
+        {
+            var timestamps = ContextStartTimestamps.Values.ToList();
+
+            if (!timestamps.Any()) return;
+            
+            var minTimestamp = timestamps.Min();
+
+            var currentLogs = OutOfContextLogs.ToList();
+            currentLogs.Where(log => log.Timestamp < minTimestamp)
+                .ToList()
+                .ForEach(log => OutOfContextLogs.TryDequeue(out _));
+            
+        }
+
+        private List<ContextLogEntry> GetMemoryLogsSince(DateTime timestamp)
+        {
+            var logs = OutOfContextLogs
+                .ToList()
+                .Where(log => log.Timestamp >= timestamp)
+                .Select(log => log.LogEntry)
+                .ToList();
+
+            return logs;
+        }
+
         public void Dispose()
         {
             Teardown(null);
+            LogManager.Shutdown();
             _logHandle?.Dispose();
         }
     }
