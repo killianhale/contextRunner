@@ -56,6 +56,14 @@ namespace ContextRunner.Samples.Web.Controllers
             }, "WeatherService");
         }
 
+        [HttpGet]
+        [Route("error_wo_context")]
+        public async Task<IEnumerable<WeatherForecast>> GetErrorWithoutContext()
+        {
+            using var context = _runner.Create("WeatherService");
+            throw new Exception("Sample exception!");
+        }
+
         [HttpPost]
         public async Task<WeatherForecast> Post(WeatherForecast forcast)
         {

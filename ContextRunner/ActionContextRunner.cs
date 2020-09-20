@@ -30,6 +30,8 @@ namespace ContextRunner
         protected Action<IActionContext> OnEnd{ get; set; }
         protected ActionContextSettings Settings { get; set; }
         protected IEnumerable<ISanitizer> Sanitizers { get; set; }
+        
+        private IDisposable _logHandle;
 
         public ActionContextRunner(
             Action<IActionContext> onStart = null,
@@ -40,10 +42,12 @@ namespace ContextRunner
             Settings = settings ?? new ActionContextSettings();
             Sanitizers = sanitizers ?? new ISanitizer[0];
         }
+        
+        #region Base implementation stuff...
 
         private void Setup(IActionContext context)
         {
-            context.Logger.WhenEntryLogged.Subscribe(
+            _logHandle = context.Logger.WhenEntryLogged.Subscribe(
                 _ => { },
                 _ => LogContext(context),
                 () => LogContext(context));
@@ -72,6 +76,7 @@ namespace ContextRunner
             {
                 { "entries", entries },
                 { "contextName", entry?.ContextName ?? context.ContextName },
+                { "contextId", entry?.ContextName ?? context.ContextName },
                 { "timeElapsed", entry?.TimeElapsed ?? context.TimeElapsed }
             };
 
@@ -109,91 +114,127 @@ namespace ContextRunner
             Console.WriteLine(logline);
         }
 
-        public void RunAction(Action<IActionContext> action, [CallerMemberName]string name = null, string contextGroupName = "default")
+        public virtual void Dispose()
         {
-            using (var context = new ActionContext(contextGroupName, name, Settings, Sanitizers))
-            {
-                try
-                {
-                    if (context.IsRoot)
-                    {
-                        OnStart?.Invoke(context);
-                    }
+            _logHandle?.Dispose();
+        }
+        
+        #endregion
 
-                    action?.Invoke(context);
-                    
-                    OnEnd?.Invoke(context);
-                }
-                catch (Exception ex)
-                {
-                    throw HandleError(ex, context);
-                }
-            };
+        public IActionContext Create([CallerMemberName] string name = null,
+            string contextGroupName = "default")
+        {
+            return new ActionContext(contextGroupName, name, Settings, Sanitizers);
         }
 
-        public async Task RunAction(Func<IActionContext, Task> action, [CallerMemberName]string name = null, string contextGroupName = "default")
+        [Obsolete("Please use CreateAndWrapActionExceptions as its use is clearer.", false)]
+        public void RunAction(Action<IActionContext> action, [CallerMemberName] string name = null,
+            string contextGroupName = "default")
         {
-            using (var context = new ActionContext(contextGroupName, name, Settings, Sanitizers))
-            {
-                try
-                {
-                    if (context.IsRoot)
-                    {
-                        OnStart?.Invoke(context);
-                    }
-
-                    await action?.Invoke(context);
-                    
-                    OnEnd?.Invoke(context);
-                }
-                catch (Exception ex)
-                {
-                    throw HandleError(ex, context);
-                }
-            };
+            CreateAndAppendToActionExceptions(action, name, contextGroupName);
         }
 
-        public async Task<T> RunAction<T>(Func<IActionContext, Task<T>> action, [CallerMemberName]string name = null, string contextGroupName = "default")
+        [Obsolete("Please use CreateAndAppendToActionExceptions as its use is clearer.", false)]
+        public async Task RunAction(Func<IActionContext, Task> action, [CallerMemberName] string name = null,
+            string contextGroupName = "default")
         {
-            using (var context = new ActionContext(contextGroupName, name, Settings, Sanitizers))
+            await CreateAndAppendToActionExceptions(action, name, contextGroupName);
+        }
+
+        [Obsolete("Please use CreateAndAppendToActionExceptions as its use is clearer.", false)]
+        public async Task<T> RunAction<T>(Func<IActionContext, Task<T>> action, [CallerMemberName] string name = null,
+            string contextGroupName = "default")
+        {
+            return await CreateAndAppendToActionExceptions(action, name, contextGroupName);
+        }
+        
+        public void CreateAndAppendToActionExceptions(Action<IActionContext> action, [CallerMemberName]string name = null, string contextGroupName = "default")
+        {
+            if (action == null) return;
+
+            using var context = new ActionContext(contextGroupName, name, Settings, Sanitizers);
+            
+            try
             {
-                try
+                if (context.IsRoot)
                 {
-                    if (context.IsRoot)
-                    {
-                        OnStart?.Invoke(context);
-                    }
+                    OnStart?.Invoke(context);
+                }
 
-                    var result = await action?.Invoke(context);
+                action.Invoke(context);
                     
-                    OnEnd?.Invoke(context);
+                OnEnd?.Invoke(context);
+            }
+            catch (Exception ex)
+            {
+                throw HandleError(ex, context);
+            }
+        }
 
-                    return result;
-                }
-                catch (Exception ex)
+        public async Task CreateAndAppendToActionExceptions(Func<IActionContext, Task> action, [CallerMemberName]string name = null, string contextGroupName = "default")
+        {
+            if (action == null) return;
+
+            using var context = new ActionContext(contextGroupName, name, Settings, Sanitizers);
+            
+            try
+            {
+                if (context.IsRoot)
                 {
-                    throw HandleError(ex, context);
+                    OnStart?.Invoke(context);
                 }
-            };
+
+                await action.Invoke(context);
+                    
+                OnEnd?.Invoke(context);
+            }
+            catch (Exception ex)
+            {
+                throw HandleError(ex, context);
+            }
+        }
+
+        public async Task<T> CreateAndAppendToActionExceptions<T>(Func<IActionContext, Task<T>> action, [CallerMemberName]string name = null, string contextGroupName = "default")
+        {
+            if (action == null) return default;
+            
+            using var context = new ActionContext(contextGroupName, name, Settings, Sanitizers);
+            
+            try
+            {
+                if (context.IsRoot)
+                {
+                    OnStart?.Invoke(context);
+                }
+
+                var result = await action.Invoke(context);
+                    
+                OnEnd?.Invoke(context);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                throw HandleError(ex, context);
+            }
         }
 
         private Exception HandleError(Exception ex, IActionContext context)
         {
-            var wasHandled = ex.Data.Contains("ContextExceptionHandled");
+            var wasHandled = ex?.Data.Contains("ContextExceptionHandled");
 
-            if(ex != null && !wasHandled)
-            {
-                context.State.SetParam("Exception", ex);
+            if (ex == null || wasHandled == true) return ex;
+            
+            context.State.SetParam("Exception", ex);
 
-                context.Logger.Log(Settings.ContextErrorMessageLevel,
-                    $"An exception of type {ex.GetType().Name} was thrown within the context '{context.ContextName}'!");
+            context.Logger.Log(Settings.ContextErrorMessageLevel,
+                $"An exception of type {ex.GetType().Name} was thrown within the context '{context.ContextName}'!");
 
-                ex.Data.Add("ContextExceptionHandled", true);
-                ex.Data.Add("ContextParams", context.State.Params);
-                ex.Data.Add("ContextEntries", context.Logger.LogEntries.ToArray());
+            ex.Data.Add("ContextExceptionHandled", true);
+            ex.Data.Add("ContextParams", context.State.Params);
+            ex.Data.Add("ContextEntries", context.Logger.LogEntries.ToArray());
 
-                context.Logger.ErrorToEmit = ex;
-            }
+            context.Logger.ErrorToEmit = ex;
 
             return ex;
         }

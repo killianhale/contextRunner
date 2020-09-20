@@ -24,7 +24,7 @@ namespace ContextRunner.Samples.Web.Controllers
         [HttpPost]
         public async Task<SurveyRequest> Post(SurveyRequest survey)
         {
-            return await _runner.RunAction(async context =>
+            return await _runner.CreateAndAppendToActionExceptions(async context =>
             {
                 context.Logger.Debug("Simulating saving survey information...");
                 context.State.SetParam("Survey", survey);
@@ -34,6 +34,36 @@ namespace ContextRunner.Samples.Web.Controllers
 
                 return survey;
             }, "SurveyService");
+        }
+        
+        [HttpPost]
+        [Route("deprecated")]
+        public async Task<SurveyRequest> Post2(SurveyRequest survey)
+        {
+            return await _runner.RunAction(async context =>
+            {
+                context.Logger.Debug("Simulating saving survey information...");
+                context.State.SetParam("Survey", survey);
+
+                var logger = LogManager.LogFactory.GetCurrentClassLogger();
+                logger.Debug("This is a test w/ deprecated method");
+
+                return survey;
+            }, "SurveyService");
+        }
+
+        [HttpPut]
+        public async Task<SurveyRequest> Put(SurveyRequest survey)
+        {
+            using var context = _runner.Create("SurveyService");
+
+            context.Logger.Debug("Pretending we're updating the survey information...");
+            context.State.SetParam("Survey", survey);
+
+            var logger = LogManager.LogFactory.GetCurrentClassLogger();
+            logger.Debug("This is yet another test");
+
+            return survey;
         }
 
         [HttpPost]

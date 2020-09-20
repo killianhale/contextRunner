@@ -4,7 +4,7 @@ using ContextRunner.State;
 
 namespace ContextRunner.Base
 {
-    public interface IActionContext
+    public interface IActionContext : IDisposable
     {
         ActionContextSettings Settings { get; }
         IContextLogger Logger { get; }

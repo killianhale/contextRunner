@@ -144,9 +144,11 @@ namespace ContextRunner.FlatIO
             return spacing + entry.Message;
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             _logHandle?.Dispose();
+            
+            base.Dispose();
         }
     }
 }

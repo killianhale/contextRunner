@@ -302,11 +302,13 @@ namespace ContextRunner.NLog
             return logs;
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             Teardown(null);
             LogManager.Shutdown();
             _logHandle?.Dispose();
+            
+            base.Dispose();
         }
     }
 }

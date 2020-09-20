@@ -13,7 +13,7 @@ namespace ContextRunner.Base
     public delegate void ContextLoadedHandler(IActionContext context);
     public delegate void ContextUnloadedHandler(IActionContext context);
 
-    public class ActionContext : IDisposable, IActionContext
+    public class ActionContext : IActionContext
     {
         private static readonly ConcurrentDictionary<string, AsyncLocal<IActionContext>> _namedContexts = new ConcurrentDictionary<string, AsyncLocal<IActionContext>>();
 
