@@ -73,7 +73,8 @@ namespace ContextRunner.NLog
 
         private void Teardown(IActionContext context)
         {
-            Dispose();
+            LogManager.Flush();
+            LogManager.Shutdown();
         }
 
         private void LogEntry(IActionContext context, ContextLogEntry entry)
@@ -88,7 +89,7 @@ namespace ContextRunner.NLog
             eventParams.ToList().ForEach(x => e.Properties.Add(x.Key, x.Value));
 
             logger.Log(e);
-            LogManager.Shutdown();
+            LogManager.Flush();
         }
 
         private void LogContextWithError(IActionContext context, Exception ex)
@@ -125,7 +126,8 @@ namespace ContextRunner.NLog
             e.Properties.Add("entries", entries);
 
             logger.Log(e);
-            LogManager.Shutdown();
+
+            LogManager.Flush();
         }
 
         private string AddSpacing(ContextLogEntry entry)
@@ -223,6 +225,7 @@ namespace ContextRunner.NLog
 
         public void Dispose()
         {
+            Teardown(null);
             _logHandle?.Dispose();
         }
     }
