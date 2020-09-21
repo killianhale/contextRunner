@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using NLog;
 using Microsoft.Extensions.Options;
 using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
@@ -27,6 +28,7 @@ namespace ContextRunner.NLog
         private readonly NlogContextRunnerConfig _config;
         private readonly MemoryTarget _memoryLogTarget;
         private IDisposable _logHandle;
+        private readonly Timer _logCleanupTimer;
 
         public NlogContextRunner(IOptionsMonitor<NlogContextRunnerConfig> options) : this(options.CurrentValue)
         {
@@ -46,6 +48,13 @@ namespace ContextRunner.NLog
             if (!string.IsNullOrEmpty(_config?.MemoryTargetLogName))
             {
                 _memoryLogTarget = LogManager.Configuration.FindTargetByName(_config.MemoryTargetLogName) as MemoryTarget;
+            
+                _logCleanupTimer = new Timer(state => {
+                    if (ContextStartTimestamps.Keys.Count == 0)
+                    {
+                        _memoryLogTarget.Logs?.Clear();
+                    }
+                }, null, TimeSpan.Zero, TimeSpan.FromMinutes(5));
             }
         }
 
