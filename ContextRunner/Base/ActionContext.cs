@@ -40,15 +40,16 @@ namespace ContextRunner.Base
             _stopwatch = new Stopwatch();
             _stopwatch.Start();
 
-            _parent = _namedContexts.GetOrAdd(contextGroupName, new AsyncLocal<IActionContext>()).Value;
-            _namedContexts[contextGroupName].Value = this;
-
             ContextName = name;
             ContextGroupName = contextGroupName;
 
             Id = Guid.NewGuid();
             CausationId = _parent?.Id ?? Id;
             CorrelationId = _parent?.CorrelationId ?? CausationId;
+
+            var groupId = $"{ContextGroupName}_{Id}";
+            _parent = _namedContexts.GetOrAdd(groupId, new AsyncLocal<IActionContext>()).Value;
+            _namedContexts[groupId].Value = this;
             
             if(IsRoot)
             {
@@ -81,6 +82,8 @@ namespace ContextRunner.Base
         public ActionContextSettings Settings { get; }
         public IContextLogger Logger { get; private set; }
         public IContextState State { get; private set; }
+        
+        public Action<IActionContext> OnDispose { get; set; }
 
         public int Depth { get; }
         public string ContextName { get; }
@@ -122,7 +125,8 @@ namespace ContextRunner.Base
                 Logger.Log(Settings.ContextEndMessageLevel,
                     $"Context {ContextName} has ended.", !shouldAlwaysShowEnd);
 
-            _namedContexts[ContextGroupName].Value = _parent;
+            var groupId = $"{ContextGroupName}_{Id}";
+            _namedContexts[groupId].Value = _parent;
 
             Logger.CompleteIfRoot();
             Logger.TrySetContext(_parent);
@@ -132,10 +136,10 @@ namespace ContextRunner.Base
                 Logger = null;
                 State = null;
                 
-                _namedContexts.Remove(ContextGroupName, out _);
-                var test = true;
+                _namedContexts.Remove(groupId, out _);
             }
 
+            OnDispose?.Invoke(this);
             Unloaded?.Invoke(this);
         }
     }

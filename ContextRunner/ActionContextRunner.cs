@@ -124,7 +124,19 @@ namespace ContextRunner
         public IActionContext Create([CallerMemberName] string name = null,
             string contextGroupName = "default")
         {
-            return new ActionContext(contextGroupName, name, Settings, Sanitizers);
+            var context =  new ActionContext(contextGroupName, name, Settings, Sanitizers);
+            
+            if (context.IsRoot)
+            {
+                OnStart?.Invoke(context);
+            }
+            
+            context.OnDispose = c =>
+            {
+                OnEnd?.Invoke(c);
+            };
+
+            return context;
         }
 
         [Obsolete("Please use CreateAndWrapActionExceptions as its use is clearer.", false)]
