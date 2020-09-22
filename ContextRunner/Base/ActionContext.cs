@@ -45,7 +45,7 @@ namespace ContextRunner.Base
 
             Id = Guid.NewGuid();
             CausationId = _parent?.Id ?? Id;
-            CorrelationId = _parent?.CorrelationId ?? CorrelationId;
+            CorrelationId = _parent?.CorrelationId ?? Id;
 
             var groupId = $"{ContextGroupName}_{CorrelationId}";
             _parent = _namedContexts.GetOrAdd(groupId, new AsyncLocal<IActionContext>()).Value;
