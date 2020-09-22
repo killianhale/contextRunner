@@ -146,6 +146,14 @@ namespace ContextRunner
             CreateAndAppendToActionExceptions(action, name, contextGroupName);
         }
 
+
+        [Obsolete("Please use CreateAndWrapActionExceptions as its use is clearer.", false)]
+        public T RunAction<T>(Func<IActionContext, T> action, [CallerMemberName] string name = null,
+            string contextGroupName = "default")
+        {
+            return CreateAndAppendToActionExceptions(action, name, contextGroupName);
+        }
+
         [Obsolete("Please use CreateAndAppendToActionExceptions as its use is clearer.", false)]
         public async Task RunAction(Func<IActionContext, Task> action, [CallerMemberName] string name = null,
             string contextGroupName = "default")
@@ -176,6 +184,31 @@ namespace ContextRunner
                 action.Invoke(context);
                     
                 OnEnd?.Invoke(context);
+            }
+            catch (Exception ex)
+            {
+                throw HandleError(ex, context);
+            }
+        }
+        
+        public T CreateAndAppendToActionExceptions<T>(Func<IActionContext, T> action, [CallerMemberName]string name = null, string contextGroupName = "default")
+        {
+            if (action == null) return default;
+
+            using var context = new ActionContext(contextGroupName, name, Settings, Sanitizers);
+            
+            try
+            {
+                if (context.IsRoot)
+                {
+                    OnStart?.Invoke(context);
+                }
+
+                var result = action.Invoke(context);
+                    
+                OnEnd?.Invoke(context);
+
+                return result;
             }
             catch (Exception ex)
             {

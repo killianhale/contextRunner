@@ -45,9 +45,9 @@ namespace ContextRunner.Base
 
             Id = Guid.NewGuid();
             CausationId = _parent?.Id ?? Id;
-            CorrelationId = _parent?.CorrelationId ?? CausationId;
+            CorrelationId = _parent?.CorrelationId ?? CorrelationId;
 
-            var groupId = $"{ContextGroupName}_{Id}";
+            var groupId = $"{ContextGroupName}_{CorrelationId}";
             _parent = _namedContexts.GetOrAdd(groupId, new AsyncLocal<IActionContext>()).Value;
             _namedContexts[groupId].Value = this;
             
@@ -125,7 +125,7 @@ namespace ContextRunner.Base
                 Logger.Log(Settings.ContextEndMessageLevel,
                     $"Context {ContextName} has ended.", !shouldAlwaysShowEnd);
 
-            var groupId = $"{ContextGroupName}_{Id}";
+            var groupId = $"{ContextGroupName}_{CorrelationId}";
             _namedContexts[groupId].Value = _parent;
 
             Logger.CompleteIfRoot();
