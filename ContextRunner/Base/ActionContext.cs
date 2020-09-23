@@ -15,6 +15,7 @@ namespace ContextRunner.Base
 
     public class ActionContext : IActionContext
     {
+        private static readonly AsyncLocal<Guid?> _correlationId = new AsyncLocal<Guid?>();
         private static readonly ConcurrentDictionary<string, AsyncLocal<IActionContext>> _namedContexts = new ConcurrentDictionary<string, AsyncLocal<IActionContext>>();
 
         public static event ContextLoadedHandler Loaded;
@@ -43,11 +44,10 @@ namespace ContextRunner.Base
             ContextName = name;
             ContextGroupName = contextGroupName;
 
-            Id = Guid.NewGuid();
-            CausationId = _parent?.Id ?? Id;
-            CorrelationId = _parent?.CorrelationId ?? Id;
+            _correlationId.Value ??= Guid.NewGuid();
+            var baseId = _correlationId.Value;
 
-            var groupId = $"{ContextGroupName}_{CorrelationId}";
+            var groupId = $"{ContextGroupName}_{baseId.Value}";
             _parent = _namedContexts.GetOrAdd(groupId, new AsyncLocal<IActionContext>()).Value;
             _namedContexts[groupId].Value = this;
             
@@ -58,6 +58,10 @@ namespace ContextRunner.Base
                 Depth = 0;
                 State = new ContextState(logSanitizers);
                 Logger = new ContextLogger(this);
+            
+                Id = baseId.Value;
+                CausationId = Id;
+                CorrelationId = Id;
             }
             else
             {
@@ -67,6 +71,11 @@ namespace ContextRunner.Base
                 State = _parent.State;
 
                 Logger = _parent.Logger;
+            
+                Id = Guid.NewGuid();
+                CausationId = _parent?.Id ?? Id;
+                CorrelationId = _parent?.CorrelationId ?? Id;
+
                 Logger.TrySetContext(this);
             }
 
@@ -135,6 +144,8 @@ namespace ContextRunner.Base
             {
                 Logger = null;
                 State = null;
+
+                _correlationId.Value = null;
                 
                 _namedContexts.Remove(groupId, out _);
             }

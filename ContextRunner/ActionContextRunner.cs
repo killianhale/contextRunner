@@ -76,7 +76,7 @@ namespace ContextRunner
             {
                 { "entries", entries },
                 { "contextName", entry?.ContextName ?? context.ContextName },
-                { "contextId", entry?.ContextName ?? context.ContextName },
+                { "contextId", context.Id },
                 { "timeElapsed", entry?.TimeElapsed ?? context.TimeElapsed }
             };
 
@@ -103,7 +103,7 @@ namespace ContextRunner
             var logObj = new
             {
                 Time = DateTime.Now,
-                Level = level,
+                Level = level.ToString(),
                 Name = context.ContextName,
                 Message = entry.Message,
                 Properties = props
@@ -125,6 +125,7 @@ namespace ContextRunner
             string contextGroupName = "default")
         {
             var context =  new ActionContext(contextGroupName, name, Settings, Sanitizers);
+            context.State.SetParam("RunnerType", this.GetType().Name);
             
             if (context.IsRoot)
             {
@@ -173,6 +174,7 @@ namespace ContextRunner
             if (action == null) return;
 
             using var context = new ActionContext(contextGroupName, name, Settings, Sanitizers);
+            context.State.SetParam("RunnerType", this.GetType().Name);
             
             try
             {
@@ -196,6 +198,7 @@ namespace ContextRunner
             if (action == null) return default;
 
             using var context = new ActionContext(contextGroupName, name, Settings, Sanitizers);
+            context.State.SetParam("RunnerType", this.GetType().Name);
             
             try
             {
@@ -221,6 +224,7 @@ namespace ContextRunner
             if (action == null) return;
 
             using var context = new ActionContext(contextGroupName, name, Settings, Sanitizers);
+            context.State.SetParam("RunnerType", this.GetType().Name);
             
             try
             {
@@ -244,6 +248,7 @@ namespace ContextRunner
             if (action == null) return default;
             
             using var context = new ActionContext(contextGroupName, name, Settings, Sanitizers);
+            context.State.SetParam("RunnerType", this.GetType().Name);
             
             try
             {

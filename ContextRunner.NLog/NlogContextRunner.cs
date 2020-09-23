@@ -52,7 +52,7 @@ namespace ContextRunner.NLog
                 _logCleanupTimer = new Timer(state => {
                     if (ContextStartTimestamps.Keys.Count == 0)
                     {
-                        _memoryLogTarget.Logs?.Clear();
+                        _memoryLogTarget?.Logs?.Clear();
                     }
                 }, null, TimeSpan.Zero, TimeSpan.FromMinutes(5));
             }
