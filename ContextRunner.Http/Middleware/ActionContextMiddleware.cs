@@ -16,20 +16,20 @@ namespace ContextRunner.Http.Middleware
     {
         private readonly RequestDelegate _next;
         private readonly IContextRunner _runner;
-        private readonly IOptionsMonitor<ActionContextMiddlewareConfig> _configMonitor;
+        private readonly ActionContextMiddlewareConfig _config;
 
         public ActionContextMiddleware(RequestDelegate next, IContextRunner runner = null, IOptionsMonitor<ActionContextMiddlewareConfig> configMonitor = null)
         {
             _next = next;
             _runner = runner ?? ActionContextRunner.Runner;
-            _configMonitor = configMonitor;
+            _config = configMonitor?.CurrentValue;
         }
 
         public async Task Invoke(HttpContext httpContext)
         {
             var routeData = httpContext?.Request?.RouteValues;
-            var controller = routeData == null ? null : routeData["controller"];
-            var action = routeData == null ? null : routeData["action"];
+            var controller = routeData?["controller"];
+            var action = routeData?["action"];
 
             var name = controller != null && action != null
                 ? $"{controller}_{action}"
@@ -37,10 +37,10 @@ namespace ContextRunner.Http.Middleware
 
             if (name == null)
             {
-                if(IsPathWhitelisted(httpContext.Request.Path))
+                if(httpContext?.Request != null && IsPathWhitelisted(httpContext.Request.Path))
                 {
                     name = httpContext.Request.Path.ToString();
-                    name = name.Substring(_configMonitor.CurrentValue.PathPrefixWhitelist.Length);
+                    name = name.Substring(_config.PathPrefixWhitelist.Length);
                     name = name.Replace('/', '_');
                     name += $"_{httpContext.Request.Method}";
                 }
@@ -73,25 +73,34 @@ namespace ContextRunner.Http.Middleware
                     return;
                 }
 
+                var statusCode = httpContext.Response.StatusCode;
                 var responseInfo = GetFilteredHeaders(httpContext.Response.Headers);
-                responseInfo["StatusCode"] = httpContext.Response.StatusCode;
+                responseInfo["StatusCode"] = statusCode;
                 responseInfo["Body"] = GetFilteredBody(responseBody);
 
                 context.State.SetParam("httpResponse", responseInfo);
+
+                if (statusCode >= 400 && _config.PrintLogLineForHttpErrorCodes)
+                {
+                    context.Logger.Log(_config.HttpErrorCodeMessageLogLevel, $"The HTTP request resulted in an {statusCode} response code.");
+                }
+                else if (statusCode < 400 && _config.PrintLogLineForHttpSuccessCodes)
+                {
+                    context.Logger.Log(_config.HttpSuccessCodeMessageLogLevel, $"The HTTP request resulted in an {statusCode} response code.");
+                }
 
             }, name);
         }
 
         private bool IsPathWhitelisted(PathString path)
         {
-            if(_configMonitor == null)
+            if(_config == null)
             {
                 return true;
             }
 
-            var config = _configMonitor.CurrentValue;
-            var whitelistPath = !string.IsNullOrEmpty(config?.PathPrefixWhitelist)
-                ? config.PathPrefixWhitelist
+            var whitelistPath = !string.IsNullOrEmpty(_config?.PathPrefixWhitelist)
+                ? _config.PathPrefixWhitelist
                 : null;
             var pathString = path.ToString();
 

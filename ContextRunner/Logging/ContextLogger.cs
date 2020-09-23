@@ -85,9 +85,11 @@ namespace ContextRunner.Logging
             var entry = new ContextLogEntry(
                 _context.Depth,
                 _context.ContextName,
+                _context.Id,
                 message,
                 level,
                 _context.TimeElapsed,
+                DateTime.UtcNow,
                 outputOnlyWithError
             );
 
@@ -175,7 +177,7 @@ namespace ContextRunner.Logging
                     : $"The context '{_context.ContextName}' ended with multiple warnings.";
             }
 
-            var result = new ContextLogEntry(0, _context.ContextName, message, highestLevel, _context.TimeElapsed);
+            var result = new ContextLogEntry(0, _context.ContextName, _context.Id, message, highestLevel, _context.TimeElapsed, DateTime.UtcNow);
 
             return result;
         }

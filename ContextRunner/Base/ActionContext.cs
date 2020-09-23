@@ -15,14 +15,16 @@ namespace ContextRunner.Base
 
     public class ActionContext : IActionContext
     {
-        private static readonly AsyncLocal<Guid?> _correlationId = new AsyncLocal<Guid?>();
-        private static readonly ConcurrentDictionary<string, AsyncLocal<IActionContext>> _namedContexts = new ConcurrentDictionary<string, AsyncLocal<IActionContext>>();
+        private static readonly AsyncLocal<ConcurrentDictionary<string, ActionContextStack>> _asyncLocalStacks = new AsyncLocal<ConcurrentDictionary<string, ActionContextStack>>();
 
         public static event ContextLoadedHandler Loaded;
         public static event ContextUnloadedHandler Unloaded;
 
         private readonly Stopwatch _stopwatch;
         private readonly IActionContext _parent;
+
+        private readonly ConcurrentDictionary<string, ActionContextStack> _namedStacks;
+        private readonly ActionContextStack _stack;
 
 
         public ActionContext(
@@ -40,16 +42,20 @@ namespace ContextRunner.Base
         {
             _stopwatch = new Stopwatch();
             _stopwatch.Start();
+            
+            _asyncLocalStacks.Value ??= new ConcurrentDictionary<string, ActionContextStack>();
+            _namedStacks = _asyncLocalStacks.Value;
+            _stack = _namedStacks.GetOrAdd(contextGroupName, new ActionContextStack());
 
             ContextName = name;
             ContextGroupName = contextGroupName;
 
-            _correlationId.Value ??= Guid.NewGuid();
-            var baseId = _correlationId.Value;
-
-            var groupId = $"{ContextGroupName}_{baseId.Value}";
-            _parent = _namedContexts.GetOrAdd(groupId, new AsyncLocal<IActionContext>()).Value;
-            _namedContexts[groupId].Value = this;
+            _parent = _stack.Peek();
+            _stack.Push(this);
+            
+            Id = Guid.NewGuid();
+            CausationId = _parent?.Id ?? Id;
+            CorrelationId = _stack.CorrelationId;
             
             if(IsRoot)
             {
@@ -58,10 +64,6 @@ namespace ContextRunner.Base
                 Depth = 0;
                 State = new ContextState(logSanitizers);
                 Logger = new ContextLogger(this);
-            
-                Id = baseId.Value;
-                CausationId = Id;
-                CorrelationId = Id;
             }
             else
             {
@@ -71,10 +73,6 @@ namespace ContextRunner.Base
                 State = _parent.State;
 
                 Logger = _parent.Logger;
-            
-                Id = Guid.NewGuid();
-                CausationId = _parent?.Id ?? Id;
-                CorrelationId = _parent?.CorrelationId ?? Id;
 
                 Logger.TrySetContext(this);
             }
@@ -102,14 +100,9 @@ namespace ContextRunner.Base
         public Guid CorrelationId { get; }
         public Guid CausationId { get; }
 
-        public bool IsRoot {
-            get => _parent == null;
-        }
+        public bool IsRoot => _parent == null;
 
-        public TimeSpan TimeElapsed
-        {
-            get => _stopwatch.Elapsed;
-        }
+        public TimeSpan TimeElapsed => _stopwatch.Elapsed;
 
         public bool ShouldSuppress()
         {
@@ -134,20 +127,22 @@ namespace ContextRunner.Base
                 Logger.Log(Settings.ContextEndMessageLevel,
                     $"Context {ContextName} has ended.", !shouldAlwaysShowEnd);
 
-            var groupId = $"{ContextGroupName}_{CorrelationId}";
-            _namedContexts[groupId].Value = _parent;
+            _stack.Pop();
 
             Logger.CompleteIfRoot();
             Logger.TrySetContext(_parent);
 
-            if (IsRoot)
+            if (_stack.IsEmpty)
             {
                 Logger = null;
                 State = null;
 
-                _correlationId.Value = null;
-                
-                _namedContexts.Remove(groupId, out _);
+                _namedStacks.Remove(ContextGroupName, out _);
+
+                if (!_namedStacks.Any())
+                {
+                    _asyncLocalStacks.Value = null;
+                }
             }
 
             OnDispose?.Invoke(this);

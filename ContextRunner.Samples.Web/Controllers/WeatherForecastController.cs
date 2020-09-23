@@ -57,6 +57,50 @@ namespace ContextRunner.Samples.Web.Controllers
         }
 
         [HttpGet]
+        [Route("error_caught")]
+        public async Task<IEnumerable<WeatherForecast>> GetCaughtError()
+        {
+            try
+            {
+                return await _runner.RunAction<IEnumerable<WeatherForecast>>(async context =>
+                {
+                    throw new Exception("Sample exception!");
+                }, "WeatherService");
+            }
+            catch (Exception e)
+            {
+                return new List<WeatherForecast>();
+            }
+        }
+
+        [HttpGet]
+        [Route("error_override")]
+        public async Task<IEnumerable<WeatherForecast>> GetOverridenError()
+        {
+            try
+            {
+                return await _runner.CreateAndAppendToActionExceptions<IEnumerable<WeatherForecast>>(async context =>
+                    {
+                        throw new Exception("Sample exception!");
+                    },
+                    (ex, context) =>
+                    {
+                        ex.Data.Add("ContextExceptionHandled", true);
+                
+                        context.Logger.Information($"An error was thrown but it's expected... don't blow up!");
+                        context.State.SetParam("IgnoredException", ex);
+
+                        return ex;
+                    },
+                    "WeatherService");
+            }
+            catch (Exception e)
+            {
+                return new List<WeatherForecast>();
+            }
+        }
+
+        [HttpGet]
         [Route("error_wo_context")]
         public async Task<IEnumerable<WeatherForecast>> GetErrorWithoutContext()
         {

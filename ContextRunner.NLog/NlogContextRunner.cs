@@ -144,11 +144,14 @@ namespace ContextRunner.NLog
             logs.AddRange(context.Logger.LogEntries);
             
             var entries = logs
+                .OrderBy(e => e.Timestamp)
                 .Select(e => new
                 {
+                    Timestamp = e.Timestamp,
                     Level = ConvertFromMsLogLevel(e.LogLevel).ToString(),
                     Message = AddSpacing(e),
-                    Context = e.ContextName,
+                    ContextName = e.ContextName,
+                    ContextId = e.ContextId,
                     e.TimeElapsed
                 });
 
@@ -280,7 +283,7 @@ namespace ContextRunner.NLog
             _memoryLogTarget.Logs.ToList().ForEach(l => logCopy.Add(l));
             _memoryLogTarget.Logs.Clear();
 
-            logCopy.Select(log => (DateTime.Now, new ContextLogEntry(-1, null, log, MsLogLevel.Information, TimeSpan.Zero, false)))
+            logCopy.Select(log => (DateTime.Now, new ContextLogEntry(-1, null, Guid.Empty, log, MsLogLevel.Information, TimeSpan.Zero, DateTime.UtcNow, false)))
                 .ToList()
                 .ForEach(entry => OutOfContextLogs.Enqueue(entry));
         }

@@ -77,6 +77,7 @@ namespace ContextRunner.Samples.Web
             services.AddSwaggerGenNewtonsoftSupport();
 
             services.Configure<NlogContextRunnerConfig>(Configuration.GetSection("NlogContextRunner"));
+            services.Configure<ActionContextMiddlewareConfig>(Configuration.GetSection("ContextRunnerHttp"));
             services.Configure<FlatIOContextRunnerConfig>(Configuration.GetSection("FlatIOContextRunner"));
 
             // services.AddSingleton<IContextRunner, ActionContextRunner>();
@@ -85,7 +86,7 @@ namespace ContextRunner.Samples.Web
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IOptions<ActionContextMiddlewareConfig> contextRunnerHttpConfig)
         {
             app.UseSwagger();
             app.UseSwaggerUI(config =>

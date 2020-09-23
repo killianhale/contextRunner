@@ -65,8 +65,8 @@ namespace ContextRunner.Samples.Web
                 httpContext.Response.ContentType = "application/json";
 
                 var roContextParams = ex.Data["ContextParams"] as IReadOnlyDictionary<string, object>;
-                var contextParams = roContextParams.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-                contextParams.Remove("Exception");
+                var contextParams = roContextParams?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+                contextParams?.Remove("Exception");
 
                 var entries = ex.Data["ContextEntries"] as ContextLogEntry[];
 
