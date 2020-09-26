@@ -156,14 +156,14 @@ namespace ContextRunner
         }
 
         [Obsolete("Please use CreateAndAppendToActionExceptions as its use is clearer.", false)]
-        public async Task RunAction(Func<IActionContext, Task> action, [CallerMemberName] string name = null,
+        public async Task RunActionAsync(Func<IActionContext, Task> action, [CallerMemberName] string name = null,
             string contextGroupName = "default")
         {
             await CreateAndAppendToActionExceptions(action, name, contextGroupName);
         }
 
         [Obsolete("Please use CreateAndAppendToActionExceptions as its use is clearer.", false)]
-        public async Task<T> RunAction<T>(Func<IActionContext, Task<T>> action, [CallerMemberName] string name = null,
+        public async Task<T> RunActionAsync<T>(Func<IActionContext, Task<T>> action, [CallerMemberName] string name = null,
             string contextGroupName = "default")
         {
             return await CreateAndAppendToActionExceptions(action, name, contextGroupName);
@@ -233,13 +233,13 @@ namespace ContextRunner
             }
         }
 
-        public async Task CreateAndAppendToActionExceptions(Func<IActionContext, Task> action, [CallerMemberName] string name = null,
+        public async Task CreateAndAppendToActionExceptionsAsync(Func<IActionContext, Task> action, [CallerMemberName] string name = null,
             string contextGroupName = "default")
         {
-            await CreateAndAppendToActionExceptions(action, HandleError, name, contextGroupName);
+            await CreateAndAppendToActionExceptionsAsync(action, HandleError, name, contextGroupName);
         }
 
-        public async Task CreateAndAppendToActionExceptions(Func<IActionContext, Task> action, Func<Exception, IActionContext, Exception> errorHandlingOverride, [CallerMemberName]string name = null, string contextGroupName = "default")
+        public async Task CreateAndAppendToActionExceptionsAsync(Func<IActionContext, Task> action, Func<Exception, IActionContext, Exception> errorHandlingOverride, [CallerMemberName]string name = null, string contextGroupName = "default")
         {
             if (action == null) return;
 
@@ -264,13 +264,13 @@ namespace ContextRunner
             }
         }
 
-        public async Task<T> CreateAndAppendToActionExceptions<T>(Func<IActionContext, Task<T>> action, [CallerMemberName] string name = null,
+        public async Task<T> CreateAndAppendToActionExceptionsAsync<T>(Func<IActionContext, Task<T>> action, [CallerMemberName] string name = null,
             string contextGroupName = "default")
         {
-            return await CreateAndAppendToActionExceptions(action, HandleError, name, contextGroupName);
+            return await CreateAndAppendToActionExceptionsAsync(action, HandleError, name, contextGroupName);
         }
 
-        public async Task<T> CreateAndAppendToActionExceptions<T>(Func<IActionContext, Task<T>> action, Func<Exception, IActionContext, Exception> errorHandlingOverride, [CallerMemberName]string name = null, string contextGroupName = "default")
+        public async Task<T> CreateAndAppendToActionExceptionsAsync<T>(Func<IActionContext, Task<T>> action, Func<Exception, IActionContext, Exception> errorHandlingOverride, [CallerMemberName]string name = null, string contextGroupName = "default")
         {
             if (action == null) return default;
             

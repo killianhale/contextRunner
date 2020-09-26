@@ -1,13 +1,24 @@
 ﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=7c1e7b9c_002D893e_002D4c7f_002D89f4_002D7717105367fd/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="ConcurrentNamedContextsTest" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=20f8625b_002D8644_002D441d_002Da3d8_002D62860a61c578/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="SyncActionContextOutputsLogLevel" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
   &lt;TestAncestor&gt;
-    &lt;TestId&gt;xUnit::23D57319-2B11-4CA2-9D23-D81957DC6193::.NETCoreApp,Version=v3.1::ContextRunner.Tests.ActionContextRunnerTests.ConcurrentNamedContextsTest&lt;/TestId&gt;
+    &lt;TestId&gt;xUnit::23D57319-2B11-4CA2-9D23-D81957DC6193::.NETCoreApp,Version=v3.1::ContextRunner.Tests.ActionContextRunnerTests.SyncActionContextOutputsLogLevel&lt;/TestId&gt;
   &lt;/TestAncestor&gt;
 &lt;/SessionState&gt;</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=922dde94_002D4bb3_002D44a4_002D9c70_002Dc9f336bff245/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="ConcurrentNamedContextsTest #2" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=7c1e7b9c_002D893e_002D4c7f_002D89f4_002D7717105367fd/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="ConcurrentNamedContextsTest" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+  &lt;TestAncestor&gt;
+    &lt;TestId&gt;xUnit::23D57319-2B11-4CA2-9D23-D81957DC6193::.NETCoreApp,Version=v3.1::ContextRunner.Tests.ActionContextRunnerTests&lt;/TestId&gt;
+  &lt;/TestAncestor&gt;
+&lt;/SessionState&gt;</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=7d6ac3ce_002D57da_002D479e_002D8625_002D6635dce495cd/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="SyncActionContextActionIsCalled" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+  &lt;TestAncestor&gt;
+    &lt;TestId&gt;xUnit::23D57319-2B11-4CA2-9D23-D81957DC6193::.NETCoreApp,Version=v3.1::ContextRunner.Tests.ActionContextRunnerTests&lt;/TestId&gt;
+  &lt;/TestAncestor&gt;
+&lt;/SessionState&gt;</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=922dde94_002D4bb3_002D44a4_002D9c70_002Dc9f336bff245/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="ConcurrentNamedContextsTest #2" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
   &lt;TestAncestor&gt;
     &lt;TestId&gt;xUnit::23D57319-2B11-4CA2-9D23-D81957DC6193::.NETCoreApp,Version=v3.1::ContextRunner.Tests.ActionContextRunnerTests.LogsOutputSuccessfullyWhenUsingCreate&lt;/TestId&gt;
     &lt;TestId&gt;xUnit::23D57319-2B11-4CA2-9D23-D81957DC6193::.NETCoreApp,Version=v3.1::ContextRunner.Tests.ActionContextRunnerTests.ConcurrentNamedContextsExecuteSuccessfully&lt;/TestId&gt;
     &lt;TestId&gt;xUnit::23D57319-2B11-4CA2-9D23-D81957DC6193::.NETCoreApp,Version=v3.1::ContextRunner.Tests.ActionContextRunnerTests.ConcurrentChildContextsExecuteSuccessfully&lt;/TestId&gt;
+    &lt;TestId&gt;xUnit::23D57319-2B11-4CA2-9D23-D81957DC6193::.NETCoreApp,Version=v3.1::ContextRunner.Tests.ActionContextRunnerTests.ContextActionIsCalled&lt;/TestId&gt;
   &lt;/TestAncestor&gt;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>

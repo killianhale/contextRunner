@@ -26,7 +26,7 @@ namespace ContextRunner.Samples.Web.Controllers
         [HttpGet]
         public async Task<IEnumerable<WeatherForecast>> Get()
         {
-            return await _runner.RunAction<IEnumerable<WeatherForecast>>(async context =>
+            return await _runner.RunActionAsync<IEnumerable<WeatherForecast>>(async context =>
             {
                 context.Logger.Debug("Simulating fetching weather information...");
                 context.State.SetParam("WeatherInfo", new
@@ -50,7 +50,7 @@ namespace ContextRunner.Samples.Web.Controllers
         [Route("error")]
         public async Task<IEnumerable<WeatherForecast>> GetError()
         {
-            return await _runner.RunAction<IEnumerable<WeatherForecast>>(async context =>
+            return await _runner.RunActionAsync<IEnumerable<WeatherForecast>>(async context =>
             {
                 throw new Exception("Sample exception!");
             }, "WeatherService");
@@ -62,7 +62,7 @@ namespace ContextRunner.Samples.Web.Controllers
         {
             try
             {
-                return await _runner.RunAction<IEnumerable<WeatherForecast>>(async context =>
+                return await _runner.RunActionAsync<IEnumerable<WeatherForecast>>(async context =>
                 {
                     throw new Exception("Sample exception!");
                 }, "WeatherService");
@@ -79,7 +79,7 @@ namespace ContextRunner.Samples.Web.Controllers
         {
             try
             {
-                return await _runner.CreateAndAppendToActionExceptions<IEnumerable<WeatherForecast>>(async context =>
+                return await _runner.CreateAndAppendToActionExceptionsAsync<IEnumerable<WeatherForecast>>(async context =>
                     {
                         throw new Exception("Sample exception!");
                     },
@@ -111,7 +111,7 @@ namespace ContextRunner.Samples.Web.Controllers
         [HttpPost]
         public async Task<WeatherForecast> Post(WeatherForecast forcast)
         {
-            return await _runner.RunAction(async context =>
+            return await _runner.RunActionAsync(async context =>
             {
                 context.Logger.Debug("Simulating saving weather information...");
                 context.State.SetParam("WeatherInfo", new

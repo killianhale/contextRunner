@@ -137,6 +137,7 @@ namespace ContextRunner.Logging
                 LogLevel.Information,
                 LogLevel.Debug,
                 LogLevel.Trace,
+                LogLevel.None
             };
 
             IEnumerable<ContextLogEntry> highest = null;

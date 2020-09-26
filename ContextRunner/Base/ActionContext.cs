@@ -134,8 +134,8 @@ namespace ContextRunner.Base
 
             if (_stack.IsEmpty)
             {
-                Logger = null;
-                State = null;
+                // Logger = null;
+                // State = null;
 
                 _namedStacks.Remove(ContextGroupName, out _);
 
