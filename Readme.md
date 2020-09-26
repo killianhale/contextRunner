@@ -2,6 +2,7 @@
 
 [![NuGet](https://img.shields.io/nuget/dt/contextrunner.svg)](https://www.nuget.org/packages/contextrunner) 
 [![NuGet](https://img.shields.io/nuget/vpre/contextrunner.svg)](https://www.nuget.org/packages/contextrunner)
+![Build](https://github.com/matholum/contextRunner/workflows/.NET%20Core/badge.svg)
 
 Ipsum exercitation reprehenderit minim in aliquip deserunt amet nisi esse. Ad exercitation fugiat incididunt ex qui laborum eiusmod Lorem exercitation. Ullamco magna qui qui reprehenderit velit laboris enim ut ut Lorem non esse fugiat.
 
