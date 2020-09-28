@@ -165,7 +165,13 @@ namespace ContextRunner.Logging
             var highestLevelCount = LogEntries.Count(entry => entry.LogLevel == highestLevel);
             var highestFirstMessage = LogEntries.FirstOrDefault(entry => entry.LogLevel == highestLevel)?.Message;
 
-            if (highestLevel == LogLevel.Error || highestLevel == LogLevel.Critical)
+            if (highestLevel == LogLevel.Critical)
+            {
+                message = highestLevelCount == 1
+                    ? $"The context '{_context.ContextName}' ended with a critical error. {highestFirstMessage}"
+                    : $"The context '{_context.ContextName}' ended with multiple critical errors.";
+            }
+            else if (highestLevel == LogLevel.Error)
             {
                 message = highestLevelCount == 1
                     ? $"The context '{_context.ContextName}' ended with an error. {highestFirstMessage}"

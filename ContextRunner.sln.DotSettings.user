@@ -12,6 +12,7 @@
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=7d6ac3ce_002D57da_002D479e_002D8625_002D6635dce495cd/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="SyncActionContextActionIsCalled" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
   &lt;TestAncestor&gt;
     &lt;TestId&gt;xUnit::23D57319-2B11-4CA2-9D23-D81957DC6193::.NETCoreApp,Version=v3.1::ContextRunner.Tests.ActionContextRunnerTests&lt;/TestId&gt;
+    &lt;TestId&gt;xUnit::23D57319-2B11-4CA2-9D23-D81957DC6193::.NETCoreApp,Version=v3.1::ContextRunner.Tests.BaseTests.ContextLoggerTests&lt;/TestId&gt;
   &lt;/TestAncestor&gt;
 &lt;/SessionState&gt;</s:String>
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=922dde94_002D4bb3_002D44a4_002D9c70_002Dc9f336bff245/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="ConcurrentNamedContextsTest #2" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
