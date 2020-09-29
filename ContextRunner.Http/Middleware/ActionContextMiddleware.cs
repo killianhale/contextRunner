@@ -51,7 +51,7 @@ namespace ContextRunner.Http.Middleware
                 }
             }
 
-            await _runner.RunAction(async context =>
+            await _runner.CreateAndAppendToActionExceptionsAsync(async context =>
             {
                 var requestInfo = GetFilteredHeaders(httpContext.Request.Headers);
                 requestInfo["Path"] = httpContext.Request.Path.Value;

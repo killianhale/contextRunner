@@ -159,14 +159,14 @@ namespace ContextRunner
         public async Task RunActionAsync(Func<IActionContext, Task> action, [CallerMemberName] string name = null,
             string contextGroupName = "default")
         {
-            await CreateAndAppendToActionExceptions(action, name, contextGroupName);
+            await CreateAndAppendToActionExceptionsAsync(action, name, contextGroupName);
         }
 
         [Obsolete("Please use CreateAndAppendToActionExceptions as its use is clearer.", false)]
         public async Task<T> RunActionAsync<T>(Func<IActionContext, Task<T>> action, [CallerMemberName] string name = null,
             string contextGroupName = "default")
         {
-            return await CreateAndAppendToActionExceptions(action, name, contextGroupName);
+            return await CreateAndAppendToActionExceptionsAsync(action, name, contextGroupName);
         }
 
         public void CreateAndAppendToActionExceptions(Action<IActionContext> action,
