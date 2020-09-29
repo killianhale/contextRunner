@@ -2,19 +2,22 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using ContextRunner.Base;
+using ContextRunner.State;
 
 namespace ContextRunner.Tests
 {
     public class ActionContextRunnerFactory
     {
         private readonly ActionContextSettings _settings;
+        private readonly ISanitizer[] _sanitizers;
 
-        public ActionContextRunnerFactory(ActionContextSettings settings = null)
+        public ActionContextRunnerFactory(ActionContextSettings settings = null, ISanitizer[] sanitizers = null)
         {
             _settings = settings ?? new ActionContextSettings()
             {
                 EnableContextEndMessage = false
             };
+            _sanitizers = sanitizers ?? new ISanitizer[0];
         }
 
         public IActionContext Create(Action<IContextRunner> test)
@@ -36,7 +39,7 @@ namespace ContextRunner.Tests
                             resetEvent.Set();
                         }
                     );
-                }, _settings);
+                }, _settings, _sanitizers);
             
             test.Invoke(contextRunner);
             
@@ -68,7 +71,7 @@ namespace ContextRunner.Tests
                             resetEvent.Set();
                         }
                     );
-                }, _settings);
+                }, _settings, _sanitizers);
             
             var result = test.Invoke(contextRunner);
             
@@ -99,7 +102,7 @@ namespace ContextRunner.Tests
                             resetEvent.Set();
                         }
                     );
-                }, _settings);
+                }, _settings, _sanitizers);
             
             await test.Invoke(contextRunner);
             
@@ -131,7 +134,7 @@ namespace ContextRunner.Tests
                             resetEvent.Set();
                         }
                     );
-                }, _settings);
+                }, _settings, _sanitizers);
             
             var result = await test.Invoke(contextRunner);
             

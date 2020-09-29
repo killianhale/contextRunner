@@ -10,20 +10,22 @@ namespace ContextRunner.State.Sanitizers
     public class KeyBasedSanitizer : ISanitizer
     {
         private readonly IEnumerable<string> _sanitizedKeys;
+        private readonly int _maxDepth;
 
-        public KeyBasedSanitizer(IEnumerable<string> sanitizedKeys)
+        public KeyBasedSanitizer(IEnumerable<string> sanitizedKeys, int maxDepth = 10)
         {
             _sanitizedKeys = sanitizedKeys;
+            _maxDepth = maxDepth;
         }
 
-        public object Sanitize(KeyValuePair<string, object> contextParam)
+        public dynamic Sanitize(KeyValuePair<string, object> contextParam)
         {
             if (contextParam.Key.ToLower() == "request")
             {
                 return contextParam.Value;
             }
 
-            return SanitizeParam(contextParam.Key, contextParam.Value);
+            return SanitizeParam(contextParam.Key, contextParam.Value, 0);
         }
 
         private bool ShouldBeSanitized(string propName)
@@ -36,8 +38,10 @@ namespace ContextRunner.State.Sanitizers
             return _sanitizedKeys.Contains(key);
         }
 
-        private object SanitizeParam(string propName, object obj)
+        private object SanitizeParam(string propName, object obj, int level)
         {
+            if (level == _maxDepth) return "~truncated~";
+            
             if (propName != null && ShouldBeSanitized(propName))
             {
                 return null;
@@ -77,33 +81,33 @@ namespace ContextRunner.State.Sanitizers
             }
             else if (lookupObj is ExpandoObject)
             {
-                return GetDictionary((IDictionary<string, object>)lookupObj);
+                return GetDictionary((IDictionary<string, object>)lookupObj, level);
             }
             else if (lookupObj is IReadOnlyDictionary<string, object> roDict)
             {
                 var dict = roDict.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
-                return GetDictionary(dict);
+                return GetDictionary(dict, level);
             }
             else if (lookupObj is IDictionary<string, object> dictionary)
             {
-                return GetDictionary(dictionary);
+                return GetDictionary(dictionary, level);
             }
             else if(lookupObj is IEnumerable enumerable)
             {
                 var result = new List<object>(enumerable.Cast<object>())
-                    .Select(item => SanitizeParam(null, item))
+                    .Select(item => SanitizeParam(null, item, level + 1))
                     .ToList();
 
                 return result;
             }
             else if(lookupObj is Exception exception)
             {
-                return GetException(type, exception);
+                return GetException(type, exception, level);
             }
             else if (type.IsClass)
             {
-                return GetObject(type, lookupObj);
+                return GetObject(type, lookupObj, level);
             }
             else
             {
@@ -111,7 +115,7 @@ namespace ContextRunner.State.Sanitizers
             }
         }
 
-        private object GetException(Type type, Exception ex)
+        private object GetException(Type type, Exception ex, int level)
         {
             var expando = new ExpandoObject();
             var dictionary = (IDictionary<string, object>)expando;
@@ -138,7 +142,7 @@ namespace ContextRunner.State.Sanitizers
 
                 if(key is string)
                 {
-                    val = SanitizeParam((string)key, ex.Data[key]);
+                    val = SanitizeParam((string)key, ex.Data[key], level + 1);
 
                     data.Add((string)key, val);
                 }
@@ -152,7 +156,7 @@ namespace ContextRunner.State.Sanitizers
             return expando;
         }
 
-        private object GetObject(Type type, object obj)
+        private object GetObject(Type type, object obj, int level)
         {
             var expando = new ExpandoObject();
             var dictionary = (IDictionary<string, object>)expando;
@@ -163,7 +167,7 @@ namespace ContextRunner.State.Sanitizers
 
             foreach (var property in props)
             {
-                var val = SanitizeParam(property.Name, property.GetValue(obj));
+                var val = SanitizeParam(property.Name, property.GetValue(obj), level + 1);
 
                 dictionary[property.Name] = val;
             }
@@ -171,7 +175,7 @@ namespace ContextRunner.State.Sanitizers
             return expando;
         }
 
-        private object GetDictionary(IDictionary<string, object> dictionary)
+        private object GetDictionary(IDictionary<string, object> dictionary, int level)
         {
             return dictionary.Keys
                 .Where(key => !_sanitizedKeys.Contains(key))
@@ -184,7 +188,7 @@ namespace ContextRunner.State.Sanitizers
 
                         var result = type == null || type.IsPrimitive || type.IsAssignableFrom(typeof(string))
                             ? dictionary[key]
-                            : SanitizeParam(key, dictionary[key]);
+                            : SanitizeParam(key, dictionary[key], level + 1);
 
                         return result;
                     }

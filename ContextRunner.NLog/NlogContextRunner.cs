@@ -38,11 +38,13 @@ namespace ContextRunner.NLog
         {
             _config = config;
 
+            var maxDepth = config?.MaxSanitizerDepth ?? 10;
+
             OnStart = Setup;
             OnEnd = Teardown;
             Settings = GetActionContextSettings();
             Sanitizers = _config?.SanitizedProperties != null && _config.SanitizedProperties.Length > 0
-                ? new[] { new KeyBasedSanitizer(_config.SanitizedProperties) }
+                ? new[] { new KeyBasedSanitizer(_config.SanitizedProperties, maxDepth) }
                 : new[] { new KeyBasedSanitizer(new string[0]) };
 
             if (!string.IsNullOrEmpty(_config?.MemoryTargetLogName))

@@ -25,6 +25,8 @@ namespace ContextRunner.NLog
 
             SuppressContextByNameList = new string[0];
             SuppressContextsByNameUnderLevel = LogLevel.Warn;
+
+            MaxSanitizerDepth = 10;
         }
 
         public bool EnableContextStartMessage { get; set; }
@@ -48,6 +50,7 @@ namespace ContextRunner.NLog
 
         public bool AddSpacingToEntries { get; set; }
         public string[] SanitizedProperties { get; set; }
+        public int MaxSanitizerDepth { get; set; }
         
         public string MemoryTargetLogName { get; set; }
     }
