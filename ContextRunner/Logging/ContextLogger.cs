@@ -56,31 +56,77 @@ namespace ContextRunner.Logging
                 return;
             }
 
-            RemoveErrorOnlyEntries();
+            RemoveErrorOnlyEntries(false);
 
             _logSubject.OnCompleted();
         }
 
         private void CompleteWithError()
         {
-            if (!_context.Settings.IgnoreChildSuppressionOnError)
-            {
-                RemoveErrorOnlyEntries();
-            }
+            RemoveErrorOnlyEntries(true);
 
             _logSubject.OnError(ErrorToEmit);
         }
 
-        private void RemoveErrorOnlyEntries()
+        private void RemoveErrorOnlyEntries(bool isError)
         {
-            var nonErrorEntries = LogEntries.Where(entry => !entry.OutputOnlyWithError).ToList();
+            var nonErrorEntries = LogEntries.Where(entry => entry.EntryType != ContextLogEntryType.ShowOnlyOnError || (isError && entry.EntryType == ContextLogEntryType.ShowOnlyOnError))
+                .ToList();
+            
+            var shouldShowContextEndMessages = (isError && _context.Settings.AlwaysShowContextEndMessagesOnError) || _context.Settings.EnableContextEndMessage;
+
+            if (!shouldShowContextEndMessages)
+            {
+                nonErrorEntries = nonErrorEntries.Where(entry => entry.EntryType != ContextLogEntryType.ContextEnd)
+                    .ToList();
+            }
+            
+            var shouldShowContextStartMessages = (isError && _context.Settings.AlwaysShowContextStartMessagesOnError) || _context.Settings.EnableContextStartMessage;
+
+            if (!shouldShowContextStartMessages)
+            {
+                nonErrorEntries = nonErrorEntries.Where(entry => entry.EntryType != ContextLogEntryType.ContextStart)
+                    .ToList();
+            }
+            
+            var shouldSuppressEndMessage = _context.Settings.SuppressChildContextEndMessages;
+            var shouldShowChildContextEndMessages = _context.Settings.EnableContextEndMessage && !shouldSuppressEndMessage;
+
+            if (isError)
+            {
+                shouldShowChildContextEndMessages = _context.Settings.AlwaysShowContextEndMessagesOnError
+                                                    || shouldShowChildContextEndMessages;
+            }
+
+            if (!shouldShowChildContextEndMessages)
+            {
+                nonErrorEntries = nonErrorEntries.Where(entry => entry.EntryType != ContextLogEntryType.ChildContextEnd)
+                    .ToList();
+            }
+
+            var shouldSuppressStartMessage = _context.Settings.SuppressChildContextStartMessages;
+            var shouldShowChildContextStartMessages = _context.Settings.EnableContextStartMessage && !shouldSuppressStartMessage;
+
+            if (isError)
+            {
+                shouldShowChildContextStartMessages = _context.Settings.AlwaysShowContextStartMessagesOnError
+                                                 || shouldShowChildContextStartMessages;
+            }
+
+            if (!shouldShowChildContextStartMessages)
+            {
+                nonErrorEntries = nonErrorEntries.Where(entry => entry.EntryType != ContextLogEntryType.ChildContextStart)
+                    .ToList();
+            }
 
             LogEntries.Clear();
 
             nonErrorEntries.ForEach(entry => LogEntries.Enqueue(entry));
+
+            var test = true;
         }
 
-        public void Log(LogLevel level, string message, bool outputOnlyWithError = false)
+        public void LogAsType(LogLevel level, string message, ContextLogEntryType entryType = ContextLogEntryType.AlwaysShow)
         {
             var entry = new ContextLogEntry(
                 _context.Depth,
@@ -90,7 +136,7 @@ namespace ContextRunner.Logging
                 level,
                 _context.TimeElapsed,
                 DateTime.UtcNow,
-                outputOnlyWithError
+                entryType
             );
 
             _logSubject.OnNext(entry);
@@ -98,34 +144,44 @@ namespace ContextRunner.Logging
             LogEntries.Enqueue(entry);
         }
 
-        public void Debug(string message, bool outputOnlyWithError = false)
+
+        public void Log(LogLevel level, string message, bool showOnlyOnError = false)
         {
-            Log(LogLevel.Debug, message, outputOnlyWithError);
+            var type = showOnlyOnError
+                ? ContextLogEntryType.ShowOnlyOnError
+                : ContextLogEntryType.AlwaysShow;
+            
+            LogAsType(level, message, type);
         }
 
-        public void Error(string message, bool outputOnlyWithError = false)
+        public void Debug(string message, bool showOnlyOnError = false)
         {
-            Log(LogLevel.Error, message, outputOnlyWithError);
+            Log(LogLevel.Debug, message, showOnlyOnError);
         }
 
-        public void Critical(string message, bool outputOnlyWithError = false)
+        public void Error(string message, bool showOnlyOnError = false)
         {
-            Log(LogLevel.Critical, message, outputOnlyWithError);
+            Log(LogLevel.Error, message, showOnlyOnError);
         }
 
-        public void Information(string message, bool outputOnlyWithError = false)
+        public void Critical(string message, bool showOnlyOnError = false)
         {
-            Log(LogLevel.Information, message, outputOnlyWithError);
+            Log(LogLevel.Critical, message, showOnlyOnError);
         }
 
-        public void Trace(string message, bool outputOnlyWithError = false)
+        public void Information(string message, bool showOnlyOnError = false)
         {
-            Log(LogLevel.Trace, message, outputOnlyWithError);
+            Log(LogLevel.Information, message, showOnlyOnError);
         }
 
-        public void Warning(string message, bool outputOnlyWithError = false)
+        public void Trace(string message, bool showOnlyOnError = false)
         {
-            Log(LogLevel.Warning, message, outputOnlyWithError);
+            Log(LogLevel.Trace, message, showOnlyOnError);
+        }
+
+        public void Warning(string message, bool showOnlyOnError = false)
+        {
+            Log(LogLevel.Warning, message, showOnlyOnError);
         }
 
         public LogLevel GetHighestLogLevel()
@@ -184,7 +240,7 @@ namespace ContextRunner.Logging
                     : $"The context '{_context.ContextName}' ended with multiple warnings.";
             }
 
-            var result = new ContextLogEntry(0, _context.ContextName, _context.Id, message, highestLevel, _context.TimeElapsed, DateTime.UtcNow);
+            var result = new ContextLogEntry(0, _context.ContextName, _context.Id, message, highestLevel, _context.TimeElapsed, DateTime.UtcNow, ContextLogEntryType.Summary);
 
             return result;
         }

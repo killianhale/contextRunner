@@ -31,7 +31,12 @@ namespace ContextRunner.Tests
                 {
                     logHandle = c.Logger.WhenEntryLogged.Subscribe(
                         entry => { },
-                        error => { },
+                        error =>
+                        {
+                            completedContext = c;
+
+                            resetEvent.Set();
+                        },
                         () =>
                         {
                             completedContext = c;
@@ -63,7 +68,11 @@ namespace ContextRunner.Tests
                 {
                     logHandle = c.Logger.WhenEntryLogged.Subscribe(
                         entry => { },
-                        error => { },
+                        error => {
+                            completedContext = c;
+
+                            resetEvent.Set();
+                        },
                         () =>
                         {
                             completedContext = c;
@@ -94,7 +103,12 @@ namespace ContextRunner.Tests
                 {
                     logHandle = c.Logger.WhenEntryLogged.Subscribe(
                         entry => { },
-                        error => { },
+                        error =>
+                        {
+                            completedContext = c;
+
+                            resetEvent.Set();
+                        },
                         () =>
                         {
                             completedContext = c;
@@ -126,7 +140,12 @@ namespace ContextRunner.Tests
                 {
                     logHandle = c.Logger.WhenEntryLogged.Subscribe(
                         entry => { },
-                        error => { },
+                        error =>
+                        {
+                            completedContext = c;
+
+                            resetEvent.Set();
+                        },
                         () =>
                         {
                             completedContext = c;

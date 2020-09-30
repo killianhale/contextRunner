@@ -12,13 +12,15 @@ namespace ContextRunner.Logging
         IObservable<ContextLogEntry> WhenEntryLogged { get; }
         bool TrySetContext(IActionContext context);
         void CompleteIfRoot();
-        void Log(LogLevel level, string message, bool outputOnlyWithError = false);
-        void Debug(string message, bool outputOnlyWithError = false);
-        void Error(string message, bool outputOnlyWithError = false);
-        void Critical(string message, bool outputOnlyWithError = false);
-        void Information(string message, bool outputOnlyWithError = false);
-        void Trace(string message, bool outputOnlyWithError = false);
-        void Warning(string message, bool outputOnlyWithError = false);
+        void LogAsType(LogLevel level, string message,
+            ContextLogEntryType entryType = ContextLogEntryType.AlwaysShow);
+        void Log(LogLevel level, string message, bool showOnlyOnError = false);
+        void Debug(string message, bool showOnlyOnError = false);
+        void Error(string message, bool showOnlyOnError = false);
+        void Critical(string message, bool showOnlyOnError = false);
+        void Information(string message, bool showOnlyOnError = false);
+        void Trace(string message, bool showOnlyOnError = false);
+        void Warning(string message, bool showOnlyOnError = false);
         LogLevel GetHighestLogLevel();
         ContextLogEntry GetSummaryLogEntry();
     }

@@ -68,7 +68,8 @@ namespace ContextRunner.NLog
                 EnableContextStartMessage = _config.EnableContextStartMessage,
                 SuppressChildContextEndMessages = _config.SuppressChildContextEndMessages,
                 SuppressChildContextStartMessages = _config.SuppressChildContextStartMessages,
-                IgnoreChildSuppressionOnError = _config.IgnoreChildSuppressionOnError,
+                AlwaysShowContextEndMessagesOnError = _config.AlwaysShowContextEndMessagesOnError,
+                AlwaysShowContextStartMessagesOnError = _config.AlwaysShowContextStartMessagesOnError,
                 ContextEndMessageLevel = ConvertToMsLogLevel(_config.ContextEndMessageLevel),
                 ContextStartMessageLevel = ConvertToMsLogLevel(_config.ContextStartMessageLevel),
                 ContextErrorMessageLevel = ConvertToMsLogLevel(_config.ContextErrorMessageLevel),
@@ -285,7 +286,7 @@ namespace ContextRunner.NLog
             _memoryLogTarget.Logs.ToList().ForEach(l => logCopy.Add(l));
             _memoryLogTarget.Logs.Clear();
 
-            logCopy.Select(log => (DateTime.Now, new ContextLogEntry(-1, null, Guid.Empty, log, MsLogLevel.Information, TimeSpan.Zero, DateTime.UtcNow, false)))
+            logCopy.Select(log => (DateTime.Now, new ContextLogEntry(-1, null, Guid.Empty, log, MsLogLevel.Information, TimeSpan.Zero, DateTime.UtcNow, ContextLogEntryType.OutOfContext)))
                 .ToList()
                 .ForEach(entry => OutOfContextLogs.Enqueue(entry));
         }

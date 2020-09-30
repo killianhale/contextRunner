@@ -13,7 +13,7 @@ namespace ContextRunner.Logging
             LogLevel logLevel,
             TimeSpan timeElapsed,
             DateTime timestamp,
-            bool outputOnlyWithError = false)
+            ContextLogEntryType entryType = ContextLogEntryType.AlwaysShow)
         {
             ContextDepth = contextDepth;
             ContextName = contextName;
@@ -22,10 +22,10 @@ namespace ContextRunner.Logging
             LogLevel = logLevel;
             TimeElapsed = timeElapsed;
             Timestamp = timestamp;
-            OutputOnlyWithError = outputOnlyWithError;
+            EntryType = entryType;
         }
 
-        public bool OutputOnlyWithError { get; }
+        public ContextLogEntryType EntryType { get; }
         public int ContextDepth { get; }
         public string ContextName { get; }
         public Guid ContextId { get; }

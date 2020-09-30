@@ -19,7 +19,7 @@ namespace ContextRunner.NLog
             SuppressChildContextEndMessages = false;
             ContextEndMessageLevel = LogLevel.Trace;
 
-            IgnoreChildSuppressionOnError = true;
+            AlwaysShowContextEndMessagesOnError = true;
 
             ContextErrorMessageLevel = LogLevel.Error;
 
@@ -35,7 +35,8 @@ namespace ContextRunner.NLog
         public bool SuppressChildContextStartMessages { get; set; }
         public bool SuppressChildContextEndMessages { get; set; }
 
-        public bool IgnoreChildSuppressionOnError { get; set; }
+        public bool AlwaysShowContextEndMessagesOnError { get; set; }
+        public bool AlwaysShowContextStartMessagesOnError { get; set; }
 
         public LogLevel ContextStartMessageLevel { get; set; }
         public LogLevel ContextEndMessageLevel { get; set; }

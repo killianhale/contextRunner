@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ContextRunner.Base;
+using ContextRunner.Logging;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -535,6 +536,672 @@ namespace ContextRunner.Tests
             contextRunner.Dispose();
             
             Assert.Single(completedContexts);
+        }
+        
+        [Fact]
+        public async Task ContextLoggerHidesErrorOnlyLogsProperly()
+        {
+            const string message = "This is a test";
+            
+            var factory = new ActionContextRunnerFactory(new ActionContextSettings()
+            {
+                EnableContextEndMessage = false
+            });
+
+            var (completedContext, _) = await factory.CreateAsync<object>(async contextRunner =>
+            {
+                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object>(async context =>
+                {
+                    context.Logger.Trace(message, true);
+
+                    await Task.Delay(5);
+
+                    return null;
+                }, "Test");
+            });
+            
+            Assert.NotNull(completedContext);
+            Assert.Empty(completedContext.Logger.LogEntries);
+        }
+        
+        [Fact]
+        public async Task ContextLoggerShowsErrorOnlyLogsProperly()
+        {
+            const string message = "This is a test";
+            
+            var factory = new ActionContextRunnerFactory(new ActionContextSettings()
+            {
+                AlwaysShowContextEndMessagesOnError = false,
+                EnableContextEndMessage = false
+            });
+
+            var (completedContext, _) = await factory.CreateAsync<object>(async contextRunner =>
+            {
+                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object>(async context =>
+                {
+                    context.Logger.Trace(message, true);
+                    
+                    context.Logger.ErrorToEmit = new Exception("This is a pretend error!");
+
+                    await Task.Delay(5);
+
+                    return null;
+                }, "Test");
+            });
+            
+            Assert.NotNull(completedContext);
+            Assert.Single(completedContext.Logger.LogEntries);
+            
+            var entry = completedContext.Logger.LogEntries?.FirstOrDefault();
+            
+            Assert.NotNull(entry);
+            Assert.Equal(LogLevel.Trace, entry.LogLevel);
+            Assert.Equal(ContextLogEntryType.ShowOnlyOnError, entry.EntryType);
+            Assert.Equal(message, entry.Message);
+            Assert.Equal(completedContext.ContextName, entry.ContextName);
+            Assert.Equal(completedContext.Id, entry.ContextId);
+        }
+        
+        [Fact]
+        public async Task ContextLoggerShowsStartMessageWhenConfigured()
+        {
+            const string message = "This is a test";
+            
+            var factory = new ActionContextRunnerFactory(new ActionContextSettings()
+            {
+                AlwaysShowContextEndMessagesOnError = false,
+                EnableContextEndMessage = false,
+                EnableContextStartMessage = true
+            });
+
+            var (completedContext, _) = await factory.CreateAsync<object>(async contextRunner =>
+            {
+                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object>(async context =>
+                {
+                    context.Logger.Trace(message);
+                    
+                    context.Logger.ErrorToEmit = new Exception("This is a pretend error!");
+
+                    await Task.Delay(5);
+
+                    return null;
+                }, "Test");
+            });
+            
+            Assert.NotNull(completedContext);
+            Assert.Equal(2, completedContext.Logger.LogEntries.Count);
+            
+            completedContext.Logger.LogEntries.TryDequeue(out var entry1);
+            completedContext.Logger.LogEntries.TryDequeue(out var entry2);
+            
+            Assert.NotNull(entry1);
+            Assert.Equal(LogLevel.Trace, entry1.LogLevel);
+            Assert.Equal(ContextLogEntryType.ContextStart, entry1.EntryType);
+            Assert.Equal($"Context {completedContext.ContextName} has started.", entry1.Message);
+            Assert.Equal(completedContext.ContextName, entry1.ContextName);
+            Assert.Equal(completedContext.Id, entry1.ContextId);
+            
+            Assert.NotNull(entry2);
+            Assert.Equal(LogLevel.Trace, entry2.LogLevel);
+            Assert.Equal(ContextLogEntryType.AlwaysShow, entry2.EntryType);
+            Assert.Equal(message, entry2.Message);
+            Assert.Equal(completedContext.ContextName, entry2.ContextName);
+            Assert.Equal(completedContext.Id, entry2.ContextId);
+        }
+        
+        [Fact]
+        public async Task ContextLoggerShowsStartMessageOnlyOnErrorWhenConfigured()
+        {
+            const string message = "This is a test";
+            
+            var factory = new ActionContextRunnerFactory(new ActionContextSettings()
+            {
+                EnableContextEndMessage = false,
+                EnableContextStartMessage = false,
+                AlwaysShowContextEndMessagesOnError = false,
+                AlwaysShowContextStartMessagesOnError = true
+            });
+
+            var (completedContext, _) = await factory.CreateAsync<object>(async contextRunner =>
+            {
+                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object>(async context =>
+                {
+                    context.Logger.Trace(message);
+                    
+                    context.Logger.ErrorToEmit = new Exception("This is a pretend error!");
+
+                    await Task.Delay(5);
+
+                    return null;
+                }, "Test");
+            });
+            
+            Assert.NotNull(completedContext);
+            Assert.Equal(2, completedContext.Logger.LogEntries.Count);
+            
+            completedContext.Logger.LogEntries.TryDequeue(out var entry1);
+            completedContext.Logger.LogEntries.TryDequeue(out var entry2);
+            
+            Assert.NotNull(entry1);
+            Assert.Equal(LogLevel.Trace, entry1.LogLevel);
+            Assert.Equal(ContextLogEntryType.ContextStart, entry1.EntryType);
+            Assert.Equal($"Context {completedContext.ContextName} has started.", entry1.Message);
+            Assert.Equal(completedContext.ContextName, entry1.ContextName);
+            Assert.Equal(completedContext.Id, entry1.ContextId);
+            
+            Assert.NotNull(entry2);
+            Assert.Equal(LogLevel.Trace, entry2.LogLevel);
+            Assert.Equal(ContextLogEntryType.AlwaysShow, entry2.EntryType);
+            Assert.Equal(message, entry2.Message);
+            Assert.Equal(completedContext.ContextName, entry2.ContextName);
+            Assert.Equal(completedContext.Id, entry2.ContextId);
+        }
+        
+        [Fact]
+        public async Task ContextLoggerShowsEndMessageWhenConfigured()
+        {
+            const string message = "This is a test";
+            
+            var factory = new ActionContextRunnerFactory(new ActionContextSettings()
+            {
+                AlwaysShowContextEndMessagesOnError = false,
+                EnableContextEndMessage = true,
+            });
+
+            var (completedContext, _) = await factory.CreateAsync<object>(async contextRunner =>
+            {
+                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object>(async context =>
+                {
+                    context.Logger.Trace(message);
+                    
+                    context.Logger.ErrorToEmit = new Exception("This is a pretend error!");
+
+                    await Task.Delay(5);
+
+                    return null;
+                }, "Test");
+            });
+            
+            Assert.NotNull(completedContext);
+            Assert.Equal(2, completedContext.Logger.LogEntries.Count);
+            
+            completedContext.Logger.LogEntries.TryDequeue(out var entry1);
+            completedContext.Logger.LogEntries.TryDequeue(out var entry2);
+            
+            Assert.NotNull(entry1);
+            Assert.Equal(LogLevel.Trace, entry1.LogLevel);
+            Assert.Equal(ContextLogEntryType.AlwaysShow, entry1.EntryType);
+            Assert.Equal(message, entry1.Message);
+            Assert.Equal(completedContext.ContextName, entry1.ContextName);
+            Assert.Equal(completedContext.Id, entry1.ContextId);
+            
+            Assert.NotNull(entry2);
+            Assert.Equal(LogLevel.Trace, entry2.LogLevel);
+            Assert.Equal(ContextLogEntryType.ContextEnd, entry2.EntryType);
+            Assert.Equal($"Context {completedContext.ContextName} has ended.", entry2.Message);
+            Assert.Equal(completedContext.ContextName, entry2.ContextName);
+            Assert.Equal(completedContext.Id, entry2.ContextId);
+        }
+        
+        [Fact]
+        public async Task ContextLoggerShowsEndMessageOnlyOnErrorWhenConfigured()
+        {
+            const string message = "This is a test";
+            
+            var factory = new ActionContextRunnerFactory(new ActionContextSettings()
+            {
+                AlwaysShowContextStartMessagesOnError = false,
+                AlwaysShowContextEndMessagesOnError = true,
+                EnableContextEndMessage = false,
+            });
+
+            var (completedContext, _) = await factory.CreateAsync<object>(async contextRunner =>
+            {
+                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object>(async context =>
+                {
+                    context.Logger.Trace(message);
+                    
+                    context.Logger.ErrorToEmit = new Exception("This is a pretend error!");
+
+                    await Task.Delay(5);
+
+                    return null;
+                }, "Test");
+            });
+            
+            Assert.NotNull(completedContext);
+            Assert.Equal(2, completedContext.Logger.LogEntries.Count);
+            
+            completedContext.Logger.LogEntries.TryDequeue(out var entry1);
+            completedContext.Logger.LogEntries.TryDequeue(out var entry2);
+            
+            Assert.NotNull(entry1);
+            Assert.Equal(LogLevel.Trace, entry1.LogLevel);
+            Assert.Equal(ContextLogEntryType.AlwaysShow, entry1.EntryType);
+            Assert.Equal(message, entry1.Message);
+            Assert.Equal(completedContext.ContextName, entry1.ContextName);
+            Assert.Equal(completedContext.Id, entry1.ContextId);
+            
+            Assert.NotNull(entry2);
+            Assert.Equal(LogLevel.Trace, entry2.LogLevel);
+            Assert.Equal(ContextLogEntryType.ContextEnd, entry2.EntryType);
+            Assert.Equal($"Context {completedContext.ContextName} has ended.", entry2.Message);
+            Assert.Equal(completedContext.ContextName, entry2.ContextName);
+            Assert.Equal(completedContext.Id, entry2.ContextId);
+        }
+        
+        [Fact]
+        public async Task ContextLoggerSuppressesChildStartMessageWhenConfigured()
+        {
+            const string message = "This is a test";
+            
+            var factory = new ActionContextRunnerFactory(new ActionContextSettings()
+            {
+                AlwaysShowContextEndMessagesOnError = false,
+                EnableContextEndMessage = false,
+                EnableContextStartMessage = true,
+                SuppressChildContextStartMessages = true
+            });
+
+            string innerContextName = null;
+            var innerContextId = Guid.Empty;
+
+            var (completedContext, _) = await factory.CreateAsync<object>(async contextRunner =>
+            {
+                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object>(context =>
+                {
+                    context.Logger.Trace(message);
+
+                    return contextRunner.CreateAndAppendToActionExceptionsAsync<object>(innerContext =>
+                    {
+                        innerContextName = innerContext.ContextName;
+                        innerContextId = innerContext.Id;
+                        
+                        innerContext.Logger.Trace(message);
+
+                        return Task.FromResult((object) null);
+                    }, "Inner");
+                }, "Test");
+            });
+            
+            Assert.NotNull(completedContext);
+            Assert.Equal(3, completedContext.Logger.LogEntries.Count);
+            
+            completedContext.Logger.LogEntries.TryDequeue(out var entry1);
+            completedContext.Logger.LogEntries.TryDequeue(out var entry2);
+            completedContext.Logger.LogEntries.TryDequeue(out var entry3);
+            
+            Assert.NotNull(entry1);
+            Assert.Equal(LogLevel.Trace, entry1.LogLevel);
+            Assert.Equal(ContextLogEntryType.ContextStart, entry1.EntryType);
+            Assert.Equal($"Context {completedContext.ContextName} has started.", entry1.Message);
+            Assert.Equal(completedContext.ContextName, entry1.ContextName);
+            Assert.Equal(completedContext.Id, entry1.ContextId);
+            
+            Assert.NotNull(entry2);
+            Assert.Equal(LogLevel.Trace, entry2.LogLevel);
+            Assert.Equal(ContextLogEntryType.AlwaysShow, entry2.EntryType);
+            Assert.Equal(message, entry2.Message);
+            Assert.Equal(completedContext.ContextName, entry2.ContextName);
+            Assert.Equal(completedContext.Id, entry2.ContextId);
+            
+            Assert.NotNull(entry3);
+            Assert.Equal(LogLevel.Trace, entry3.LogLevel);
+            Assert.Equal(ContextLogEntryType.AlwaysShow, entry3.EntryType);
+            Assert.Equal(message, entry3.Message);
+            Assert.Equal(innerContextName, entry3.ContextName);
+            Assert.Equal(innerContextId, entry3.ContextId);
+        }
+        
+        [Fact]
+        public async Task ContextLoggerSuppressesChildEndMessageWhenConfigured()
+        {
+            const string message = "This is a test";
+            
+            var factory = new ActionContextRunnerFactory(new ActionContextSettings()
+            {
+                SuppressChildContextEndMessages = true,
+                EnableContextEndMessage = true,
+                EnableContextStartMessage = false
+            });
+
+            string innerContextName = null;
+            var innerContextId = Guid.Empty;
+
+            var (completedContext, _) = await factory.CreateAsync<object>(async contextRunner =>
+            {
+                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object>(context =>
+                {
+                    context.Logger.Trace(message);
+
+                    return contextRunner.CreateAndAppendToActionExceptionsAsync<object>(innerContext =>
+                    {
+                        innerContextName = innerContext.ContextName;
+                        innerContextId = innerContext.Id;
+                        
+                        innerContext.Logger.Trace(message);
+
+                        return Task.FromResult((object) null);
+                    }, "Inner");
+                }, "Test");
+            });
+            
+            Assert.NotNull(completedContext);
+            Assert.Equal(3, completedContext.Logger.LogEntries.Count);
+            
+            completedContext.Logger.LogEntries.TryDequeue(out var entry1);
+            completedContext.Logger.LogEntries.TryDequeue(out var entry2);
+            completedContext.Logger.LogEntries.TryDequeue(out var entry3);
+            
+            Assert.NotNull(entry1);
+            Assert.Equal(LogLevel.Trace, entry1.LogLevel);
+            Assert.Equal(ContextLogEntryType.AlwaysShow, entry1.EntryType);
+            Assert.Equal(message, entry1.Message);
+            Assert.Equal(completedContext.ContextName, entry1.ContextName);
+            Assert.Equal(completedContext.Id, entry1.ContextId);
+            
+            Assert.NotNull(entry2);
+            Assert.Equal(LogLevel.Trace, entry2.LogLevel);
+            Assert.Equal(ContextLogEntryType.AlwaysShow, entry2.EntryType);
+            Assert.Equal(message, entry2.Message);
+            Assert.Equal(innerContextName, entry2.ContextName);
+            Assert.Equal(innerContextId, entry2.ContextId);
+            
+            Assert.NotNull(entry3);
+            Assert.Equal(LogLevel.Trace, entry3.LogLevel);
+            Assert.Equal(ContextLogEntryType.ContextEnd, entry3.EntryType);
+            Assert.Equal($"Context {completedContext.ContextName} has ended.", entry3.Message);
+            Assert.Equal(completedContext.ContextName, entry3.ContextName);
+            Assert.Equal(completedContext.Id, entry3.ContextId);
+        }
+        
+        [Fact]
+        public async Task ContextLoggerShowChildStartMessage()
+        {
+            const string message = "This is a test";
+            
+            var factory = new ActionContextRunnerFactory(new ActionContextSettings()
+            {
+                AlwaysShowContextEndMessagesOnError = false,
+                EnableContextEndMessage = false,
+                EnableContextStartMessage = true,
+                SuppressChildContextStartMessages = false
+            });
+
+            string innerContextName = null;
+            var innerContextId = Guid.Empty;
+
+            var (completedContext, _) = await factory.CreateAsync<object>(async contextRunner =>
+            {
+                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object>(context =>
+                {
+                    context.Logger.Trace(message);
+
+                    return contextRunner.CreateAndAppendToActionExceptionsAsync<object>(innerContext =>
+                    {
+                        innerContextName = innerContext.ContextName;
+                        innerContextId = innerContext.Id;
+                        
+                        innerContext.Logger.Trace(message);
+
+                        return Task.FromResult((object) null);
+                    }, "Inner");
+                }, "Test");
+            });
+            
+            Assert.NotNull(completedContext);
+            Assert.Equal(4, completedContext.Logger.LogEntries.Count);
+            
+            completedContext.Logger.LogEntries.TryDequeue(out var entry1);
+            completedContext.Logger.LogEntries.TryDequeue(out var entry2);
+            completedContext.Logger.LogEntries.TryDequeue(out var entry3);
+            completedContext.Logger.LogEntries.TryDequeue(out var entry4);
+            
+            Assert.NotNull(entry1);
+            Assert.Equal(LogLevel.Trace, entry1.LogLevel);
+            Assert.Equal(ContextLogEntryType.ContextStart, entry1.EntryType);
+            Assert.Equal($"Context {completedContext.ContextName} has started.", entry1.Message);
+            Assert.Equal(completedContext.ContextName, entry1.ContextName);
+            Assert.Equal(completedContext.Id, entry1.ContextId);
+            
+            Assert.NotNull(entry2);
+            Assert.Equal(LogLevel.Trace, entry2.LogLevel);
+            Assert.Equal(ContextLogEntryType.AlwaysShow, entry2.EntryType);
+            Assert.Equal(message, entry2.Message);
+            Assert.Equal(completedContext.ContextName, entry2.ContextName);
+            Assert.Equal(completedContext.Id, entry2.ContextId);
+            
+            Assert.NotNull(entry3);
+            Assert.Equal(LogLevel.Trace, entry3.LogLevel);
+            Assert.Equal(ContextLogEntryType.ChildContextStart, entry3.EntryType);
+            Assert.Equal($"Context {innerContextName} has started.", entry3.Message);
+            Assert.Equal(innerContextName, entry3.ContextName);
+            Assert.Equal(innerContextId, entry3.ContextId);
+            
+            Assert.NotNull(entry4);
+            Assert.Equal(LogLevel.Trace, entry4.LogLevel);
+            Assert.Equal(ContextLogEntryType.AlwaysShow, entry4.EntryType);
+            Assert.Equal(message, entry4.Message);
+            Assert.Equal(innerContextName, entry4.ContextName);
+            Assert.Equal(innerContextId, entry4.ContextId);
+        }
+        
+        [Fact]
+        public async Task ContextLoggerShowChildEndMessage()
+        {
+            const string message = "This is a test";
+            
+            var factory = new ActionContextRunnerFactory(new ActionContextSettings()
+            {
+                EnableContextStartMessage = false,
+                AlwaysShowContextEndMessagesOnError = false,
+                EnableContextEndMessage = true,
+                SuppressChildContextEndMessages = false
+            });
+
+            string innerContextName = null;
+            var innerContextId = Guid.Empty;
+
+            var (completedContext, _) = await factory.CreateAsync<object>(async contextRunner =>
+            {
+                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object>(context =>
+                {
+                    context.Logger.Trace(message);
+
+                    return contextRunner.CreateAndAppendToActionExceptionsAsync<object>(innerContext =>
+                    {
+                        innerContextName = innerContext.ContextName;
+                        innerContextId = innerContext.Id;
+                        
+                        innerContext.Logger.Trace(message);
+
+                        return Task.FromResult((object) null);
+                    }, "Inner");
+                }, "Test");
+            });
+            
+            Assert.NotNull(completedContext);
+            Assert.Equal(4, completedContext.Logger.LogEntries.Count);
+            
+            completedContext.Logger.LogEntries.TryDequeue(out var entry1);
+            completedContext.Logger.LogEntries.TryDequeue(out var entry2);
+            completedContext.Logger.LogEntries.TryDequeue(out var entry3);
+            completedContext.Logger.LogEntries.TryDequeue(out var entry4);
+            
+            Assert.NotNull(entry1);
+            Assert.Equal(LogLevel.Trace, entry1.LogLevel);
+            Assert.Equal(ContextLogEntryType.AlwaysShow, entry1.EntryType);
+            Assert.Equal(message, entry1.Message);
+            Assert.Equal(completedContext.ContextName, entry1.ContextName);
+            Assert.Equal(completedContext.Id, entry1.ContextId);
+            
+            Assert.NotNull(entry2);
+            Assert.Equal(LogLevel.Trace, entry2.LogLevel);
+            Assert.Equal(ContextLogEntryType.AlwaysShow, entry2.EntryType);
+            Assert.Equal(message, entry2.Message);
+            Assert.Equal(innerContextName, entry2.ContextName);
+            Assert.Equal(innerContextId, entry2.ContextId);
+            
+            Assert.NotNull(entry3);
+            Assert.Equal(LogLevel.Trace, entry3.LogLevel);
+            Assert.Equal(ContextLogEntryType.ChildContextEnd, entry3.EntryType);
+            Assert.Equal($"Context {innerContextName} has ended.", entry3.Message);
+            Assert.Equal(innerContextName, entry3.ContextName);
+            Assert.Equal(innerContextId, entry3.ContextId);
+            
+            Assert.NotNull(entry4);
+            Assert.Equal(LogLevel.Trace, entry4.LogLevel);
+            Assert.Equal(ContextLogEntryType.ContextEnd, entry4.EntryType);
+            Assert.Equal($"Context {completedContext.ContextName} has ended.", entry4.Message);
+            Assert.Equal(completedContext.ContextName, entry4.ContextName);
+            Assert.Equal(completedContext.Id, entry4.ContextId);
+        }
+        
+        [Fact]
+        public async Task ContextLoggerNotSuppressChildStartMessageOnErrorWhenConfigured()
+        {
+            const string message = "This is a test";
+            
+            var factory = new ActionContextRunnerFactory(new ActionContextSettings()
+            {
+                AlwaysShowContextEndMessagesOnError = false,
+                EnableContextEndMessage = false,
+                AlwaysShowContextStartMessagesOnError = true,
+                EnableContextStartMessage = true,
+                SuppressChildContextStartMessages = true
+            });
+
+            string innerContextName = null;
+            var innerContextId = Guid.Empty;
+
+            var (completedContext, _) = await factory.CreateAsync<object>(async contextRunner =>
+            {
+                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object>(context =>
+                {
+                    context.Logger.Trace(message);
+
+                    return contextRunner.CreateAndAppendToActionExceptionsAsync<object>(innerContext =>
+                    {
+                        innerContextName = innerContext.ContextName;
+                        innerContextId = innerContext.Id;
+                        
+                        innerContext.Logger.Trace(message);
+                        
+                        innerContext.Logger.ErrorToEmit = new Exception("THis is a pretend error!");
+
+                        return Task.FromResult((object) null);
+                    }, "Inner");
+                }, "Test");
+            });
+            
+            Assert.NotNull(completedContext);
+            Assert.Equal(4, completedContext.Logger.LogEntries.Count);
+            
+            completedContext.Logger.LogEntries.TryDequeue(out var entry1);
+            completedContext.Logger.LogEntries.TryDequeue(out var entry2);
+            completedContext.Logger.LogEntries.TryDequeue(out var entry3);
+            completedContext.Logger.LogEntries.TryDequeue(out var entry4);
+            
+            Assert.NotNull(entry1);
+            Assert.Equal(LogLevel.Trace, entry1.LogLevel);
+            Assert.Equal(ContextLogEntryType.ContextStart, entry1.EntryType);
+            Assert.Equal($"Context {completedContext.ContextName} has started.", entry1.Message);
+            Assert.Equal(completedContext.ContextName, entry1.ContextName);
+            Assert.Equal(completedContext.Id, entry1.ContextId);
+            
+            Assert.NotNull(entry2);
+            Assert.Equal(LogLevel.Trace, entry2.LogLevel);
+            Assert.Equal(ContextLogEntryType.AlwaysShow, entry2.EntryType);
+            Assert.Equal(message, entry2.Message);
+            Assert.Equal(completedContext.ContextName, entry2.ContextName);
+            Assert.Equal(completedContext.Id, entry2.ContextId);
+            
+            Assert.NotNull(entry3);
+            Assert.Equal(LogLevel.Trace, entry3.LogLevel);
+            Assert.Equal(ContextLogEntryType.ChildContextStart, entry3.EntryType);
+            Assert.Equal($"Context {innerContextName} has started.", entry3.Message);
+            Assert.Equal(innerContextName, entry3.ContextName);
+            Assert.Equal(innerContextId, entry3.ContextId);
+            
+            Assert.NotNull(entry4);
+            Assert.Equal(LogLevel.Trace, entry4.LogLevel);
+            Assert.Equal(ContextLogEntryType.AlwaysShow, entry4.EntryType);
+            Assert.Equal(message, entry4.Message);
+            Assert.Equal(innerContextName, entry4.ContextName);
+            Assert.Equal(innerContextId, entry4.ContextId);
+        }
+        
+        [Fact]
+        public async Task ContextLoggerNotSuppressChildEndMessageOnErrorWhenConfigured()
+        {
+            const string message = "This is a test";
+            
+            var factory = new ActionContextRunnerFactory(new ActionContextSettings()
+            {
+                EnableContextStartMessage = false,
+                EnableContextEndMessage = true,
+                SuppressChildContextEndMessages = true,
+                AlwaysShowContextEndMessagesOnError = true
+            });
+
+            string innerContextName = null;
+            var innerContextId = Guid.Empty;
+
+            var (completedContext, _) = await factory.CreateAsync<object>(async contextRunner =>
+            {
+                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object>(context =>
+                {
+                    context.Logger.Trace(message);
+
+                    return contextRunner.CreateAndAppendToActionExceptionsAsync<object>(innerContext =>
+                    {
+                        innerContextName = innerContext.ContextName;
+                        innerContextId = innerContext.Id;
+                        
+                        innerContext.Logger.Trace(message);
+                        
+                        innerContext.Logger.ErrorToEmit = new Exception("THis is a pretend error!");
+
+                        return Task.FromResult((object) null);
+                    }, "Inner");
+                }, "Test");
+            });
+            
+            Assert.NotNull(completedContext);
+            Assert.Equal(4, completedContext.Logger.LogEntries.Count);
+            
+            completedContext.Logger.LogEntries.TryDequeue(out var entry1);
+            completedContext.Logger.LogEntries.TryDequeue(out var entry2);
+            completedContext.Logger.LogEntries.TryDequeue(out var entry3);
+            completedContext.Logger.LogEntries.TryDequeue(out var entry4);
+            
+            Assert.NotNull(entry1);
+            Assert.Equal(LogLevel.Trace, entry1.LogLevel);
+            Assert.Equal(ContextLogEntryType.AlwaysShow, entry1.EntryType);
+            Assert.Equal(message, entry1.Message);
+            Assert.Equal(completedContext.ContextName, entry1.ContextName);
+            Assert.Equal(completedContext.Id, entry1.ContextId);
+            
+            Assert.NotNull(entry2);
+            Assert.Equal(LogLevel.Trace, entry2.LogLevel);
+            Assert.Equal(ContextLogEntryType.AlwaysShow, entry2.EntryType);
+            Assert.Equal(message, entry2.Message);
+            Assert.Equal(innerContextName, entry2.ContextName);
+            Assert.Equal(innerContextId, entry2.ContextId);
+            
+            Assert.NotNull(entry3);
+            Assert.Equal(LogLevel.Trace, entry3.LogLevel);
+            Assert.Equal(ContextLogEntryType.ChildContextEnd, entry3.EntryType);
+            Assert.Equal($"Context {innerContextName} has ended.", entry3.Message);
+            Assert.Equal(innerContextName, entry3.ContextName);
+            Assert.Equal(innerContextId, entry3.ContextId);
+            
+            Assert.NotNull(entry4);
+            Assert.Equal(LogLevel.Trace, entry4.LogLevel);
+            Assert.Equal(ContextLogEntryType.ContextEnd, entry4.EntryType);
+            Assert.Equal($"Context {completedContext.ContextName} has ended.", entry4.Message);
+            Assert.Equal(completedContext.ContextName, entry4.ContextName);
+            Assert.Equal(completedContext.Id, entry4.ContextId);
         }
     }
 }
