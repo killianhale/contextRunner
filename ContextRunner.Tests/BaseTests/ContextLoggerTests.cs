@@ -38,8 +38,8 @@ namespace ContextRunner.Tests.BaseTests
             Assert.Single(logger.LogEntries);
             Assert.Equal(level, entry.LogLevel);
             Assert.Equal(message, entry.Message);
-            Assert.Equal(context.ContextName, entry.ContextName);
-            Assert.Equal(context.Id, entry.ContextId);
+            Assert.Equal(context.Info.ContextName, entry.ContextName);
+            Assert.Equal(context.Info.Id, entry.ContextId);
             Assert.True(entry.TimeElapsed.TotalMilliseconds > 10);
         }
 
@@ -60,8 +60,8 @@ namespace ContextRunner.Tests.BaseTests
             Assert.Single(logger.LogEntries);
             Assert.Equal(LogLevel.Trace, entry.LogLevel);
             Assert.Equal(message, entry.Message);
-            Assert.Equal(context.ContextName, entry.ContextName);
-            Assert.Equal(context.Id, entry.ContextId);
+            Assert.Equal(context.Info.ContextName, entry.ContextName);
+            Assert.Equal(context.Info.Id, entry.ContextId);
             Assert.True(entry.TimeElapsed.TotalMilliseconds > 10);
         }
 
@@ -82,8 +82,8 @@ namespace ContextRunner.Tests.BaseTests
             Assert.Single(logger.LogEntries);
             Assert.Equal(LogLevel.Debug, entry.LogLevel);
             Assert.Equal(message, entry.Message);
-            Assert.Equal(context.ContextName, entry.ContextName);
-            Assert.Equal(context.Id, entry.ContextId);
+            Assert.Equal(context.Info.ContextName, entry.ContextName);
+            Assert.Equal(context.Info.Id, entry.ContextId);
             Assert.True(entry.TimeElapsed.TotalMilliseconds > 10);
         }
 
@@ -104,8 +104,8 @@ namespace ContextRunner.Tests.BaseTests
             Assert.Single(logger.LogEntries);
             Assert.Equal(LogLevel.Information, entry.LogLevel);
             Assert.Equal(message, entry.Message);
-            Assert.Equal(context.ContextName, entry.ContextName);
-            Assert.Equal(context.Id, entry.ContextId);
+            Assert.Equal(context.Info.ContextName, entry.ContextName);
+            Assert.Equal(context.Info.Id, entry.ContextId);
             Assert.True(entry.TimeElapsed.TotalMilliseconds > 10);
         }
 
@@ -126,8 +126,8 @@ namespace ContextRunner.Tests.BaseTests
             Assert.Single(logger.LogEntries);
             Assert.Equal(LogLevel.Warning, entry.LogLevel);
             Assert.Equal(message, entry.Message);
-            Assert.Equal(context.ContextName, entry.ContextName);
-            Assert.Equal(context.Id, entry.ContextId);
+            Assert.Equal(context.Info.ContextName, entry.ContextName);
+            Assert.Equal(context.Info.Id, entry.ContextId);
             Assert.True(entry.TimeElapsed.TotalMilliseconds > 10);
         }
 
@@ -148,8 +148,8 @@ namespace ContextRunner.Tests.BaseTests
             Assert.Single(logger.LogEntries);
             Assert.Equal(LogLevel.Error, entry.LogLevel);
             Assert.Equal(message, entry.Message);
-            Assert.Equal(context.ContextName, entry.ContextName);
-            Assert.Equal(context.Id, entry.ContextId);
+            Assert.Equal(context.Info.ContextName, entry.ContextName);
+            Assert.Equal(context.Info.Id, entry.ContextId);
             Assert.True(entry.TimeElapsed.TotalMilliseconds > 10);
         }
 
@@ -170,8 +170,8 @@ namespace ContextRunner.Tests.BaseTests
             Assert.Single(logger.LogEntries);
             Assert.Equal(LogLevel.Critical, entry.LogLevel);
             Assert.Equal(message, entry.Message);
-            Assert.Equal(context.ContextName, entry.ContextName);
-            Assert.Equal(context.Id, entry.ContextId);
+            Assert.Equal(context.Info.ContextName, entry.ContextName);
+            Assert.Equal(context.Info.Id, entry.ContextId);
             Assert.True(entry.TimeElapsed.TotalMilliseconds > 10);
         }
 
@@ -272,10 +272,10 @@ namespace ContextRunner.Tests.BaseTests
             
             Assert.NotNull(logger);
             Assert.Equal(levels.Length, logger.LogEntries.Count);
-            Assert.Equal(context.ContextName, summary.ContextName);
-            Assert.Equal(context.Id, summary.ContextId);
+            Assert.Equal(context.Info.ContextName, summary.ContextName);
+            Assert.Equal(context.Info.Id, summary.ContextId);
             Assert.Equal(expectedLevel, summary.LogLevel);
-            Assert.StartsWith($"The context '{context.ContextName}' ended {expectedMessage}", summary.Message);
+            Assert.StartsWith($"The context '{context.Info.ContextName}' ended {expectedMessage}", summary.Message);
             Assert.True(summary.TimeElapsed.TotalMilliseconds > 10);
         }
 
@@ -302,13 +302,13 @@ namespace ContextRunner.Tests.BaseTests
             
             Assert.Equal(LogLevel.Trace, entry1.LogLevel);
             Assert.Equal(message1, entry1.Message);
-            Assert.Equal(context1.ContextName, entry1.ContextName);
-            Assert.Equal(context1.Id, entry1.ContextId);
+            Assert.Equal(context1.Info.ContextName, entry1.ContextName);
+            Assert.Equal(context1.Info.Id, entry1.ContextId);
             
             Assert.Equal(LogLevel.Trace, entry2.LogLevel);
             Assert.Equal(message2, entry2.Message);
-            Assert.Equal(context2.ContextName, entry2.ContextName);
-            Assert.Equal(context2.Id, entry2.ContextId);
+            Assert.Equal(context2.Info.ContextName, entry2.ContextName);
+            Assert.Equal(context2.Info.Id, entry2.ContextId);
         }
     }
 }

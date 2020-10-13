@@ -48,8 +48,6 @@ namespace ContextRunner.NLog
 
         public string ContextLogNamePrefix { get; set; }
         public string EntryLogNamePrefix { get; set; }
-
-        public bool AddSpacingToEntries { get; set; }
         public string[] SanitizedProperties { get; set; }
         public int MaxSanitizerDepth { get; set; }
         

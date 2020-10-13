@@ -598,8 +598,8 @@ namespace ContextRunner.Tests
             Assert.Equal(LogLevel.Trace, entry.LogLevel);
             Assert.Equal(ContextLogEntryType.ShowOnlyOnError, entry.EntryType);
             Assert.Equal(message, entry.Message);
-            Assert.Equal(completedContext.ContextName, entry.ContextName);
-            Assert.Equal(completedContext.Id, entry.ContextId);
+            Assert.Equal(completedContext.Info.ContextName, entry.ContextName);
+            Assert.Equal(completedContext.Info.Id, entry.ContextId);
         }
         
         [Fact]
@@ -637,16 +637,16 @@ namespace ContextRunner.Tests
             Assert.NotNull(entry1);
             Assert.Equal(LogLevel.Trace, entry1.LogLevel);
             Assert.Equal(ContextLogEntryType.ContextStart, entry1.EntryType);
-            Assert.Equal($"Context {completedContext.ContextName} has started.", entry1.Message);
-            Assert.Equal(completedContext.ContextName, entry1.ContextName);
-            Assert.Equal(completedContext.Id, entry1.ContextId);
+            Assert.Equal($"Context {completedContext.Info.ContextName} has started.", entry1.Message);
+            Assert.Equal(completedContext.Info.ContextName, entry1.ContextName);
+            Assert.Equal(completedContext.Info.Id, entry1.ContextId);
             
             Assert.NotNull(entry2);
             Assert.Equal(LogLevel.Trace, entry2.LogLevel);
             Assert.Equal(ContextLogEntryType.AlwaysShow, entry2.EntryType);
             Assert.Equal(message, entry2.Message);
-            Assert.Equal(completedContext.ContextName, entry2.ContextName);
-            Assert.Equal(completedContext.Id, entry2.ContextId);
+            Assert.Equal(completedContext.Info.ContextName, entry2.ContextName);
+            Assert.Equal(completedContext.Info.Id, entry2.ContextId);
         }
         
         [Fact]
@@ -685,16 +685,16 @@ namespace ContextRunner.Tests
             Assert.NotNull(entry1);
             Assert.Equal(LogLevel.Trace, entry1.LogLevel);
             Assert.Equal(ContextLogEntryType.ContextStart, entry1.EntryType);
-            Assert.Equal($"Context {completedContext.ContextName} has started.", entry1.Message);
-            Assert.Equal(completedContext.ContextName, entry1.ContextName);
-            Assert.Equal(completedContext.Id, entry1.ContextId);
+            Assert.Equal($"Context {completedContext.Info.ContextName} has started.", entry1.Message);
+            Assert.Equal(completedContext.Info.ContextName, entry1.ContextName);
+            Assert.Equal(completedContext.Info.Id, entry1.ContextId);
             
             Assert.NotNull(entry2);
             Assert.Equal(LogLevel.Trace, entry2.LogLevel);
             Assert.Equal(ContextLogEntryType.AlwaysShow, entry2.EntryType);
             Assert.Equal(message, entry2.Message);
-            Assert.Equal(completedContext.ContextName, entry2.ContextName);
-            Assert.Equal(completedContext.Id, entry2.ContextId);
+            Assert.Equal(completedContext.Info.ContextName, entry2.ContextName);
+            Assert.Equal(completedContext.Info.Id, entry2.ContextId);
         }
         
         [Fact]
@@ -732,15 +732,15 @@ namespace ContextRunner.Tests
             Assert.Equal(LogLevel.Trace, entry1.LogLevel);
             Assert.Equal(ContextLogEntryType.AlwaysShow, entry1.EntryType);
             Assert.Equal(message, entry1.Message);
-            Assert.Equal(completedContext.ContextName, entry1.ContextName);
-            Assert.Equal(completedContext.Id, entry1.ContextId);
+            Assert.Equal(completedContext.Info.ContextName, entry1.ContextName);
+            Assert.Equal(completedContext.Info.Id, entry1.ContextId);
             
             Assert.NotNull(entry2);
             Assert.Equal(LogLevel.Trace, entry2.LogLevel);
             Assert.Equal(ContextLogEntryType.ContextEnd, entry2.EntryType);
-            Assert.Equal($"Context {completedContext.ContextName} has ended.", entry2.Message);
-            Assert.Equal(completedContext.ContextName, entry2.ContextName);
-            Assert.Equal(completedContext.Id, entry2.ContextId);
+            Assert.Equal($"Context {completedContext.Info.ContextName} has ended.", entry2.Message);
+            Assert.Equal(completedContext.Info.ContextName, entry2.ContextName);
+            Assert.Equal(completedContext.Info.Id, entry2.ContextId);
         }
         
         [Fact]
@@ -779,15 +779,15 @@ namespace ContextRunner.Tests
             Assert.Equal(LogLevel.Trace, entry1.LogLevel);
             Assert.Equal(ContextLogEntryType.AlwaysShow, entry1.EntryType);
             Assert.Equal(message, entry1.Message);
-            Assert.Equal(completedContext.ContextName, entry1.ContextName);
-            Assert.Equal(completedContext.Id, entry1.ContextId);
+            Assert.Equal(completedContext.Info.ContextName, entry1.ContextName);
+            Assert.Equal(completedContext.Info.Id, entry1.ContextId);
             
             Assert.NotNull(entry2);
             Assert.Equal(LogLevel.Trace, entry2.LogLevel);
             Assert.Equal(ContextLogEntryType.ContextEnd, entry2.EntryType);
-            Assert.Equal($"Context {completedContext.ContextName} has ended.", entry2.Message);
-            Assert.Equal(completedContext.ContextName, entry2.ContextName);
-            Assert.Equal(completedContext.Id, entry2.ContextId);
+            Assert.Equal($"Context {completedContext.Info.ContextName} has ended.", entry2.Message);
+            Assert.Equal(completedContext.Info.ContextName, entry2.ContextName);
+            Assert.Equal(completedContext.Info.Id, entry2.ContextId);
         }
         
         [Fact]
@@ -814,8 +814,8 @@ namespace ContextRunner.Tests
 
                     return contextRunner.CreateAndAppendToActionExceptionsAsync<object>(innerContext =>
                     {
-                        innerContextName = innerContext.ContextName;
-                        innerContextId = innerContext.Id;
+                        innerContextName = innerContext.Info.ContextName;
+                        innerContextId = innerContext.Info.Id;
                         
                         innerContext.Logger.Trace(message);
 
@@ -834,16 +834,16 @@ namespace ContextRunner.Tests
             Assert.NotNull(entry1);
             Assert.Equal(LogLevel.Trace, entry1.LogLevel);
             Assert.Equal(ContextLogEntryType.ContextStart, entry1.EntryType);
-            Assert.Equal($"Context {completedContext.ContextName} has started.", entry1.Message);
-            Assert.Equal(completedContext.ContextName, entry1.ContextName);
-            Assert.Equal(completedContext.Id, entry1.ContextId);
+            Assert.Equal($"Context {completedContext.Info.ContextName} has started.", entry1.Message);
+            Assert.Equal(completedContext.Info.ContextName, entry1.ContextName);
+            Assert.Equal(completedContext.Info.Id, entry1.ContextId);
             
             Assert.NotNull(entry2);
             Assert.Equal(LogLevel.Trace, entry2.LogLevel);
             Assert.Equal(ContextLogEntryType.AlwaysShow, entry2.EntryType);
             Assert.Equal(message, entry2.Message);
-            Assert.Equal(completedContext.ContextName, entry2.ContextName);
-            Assert.Equal(completedContext.Id, entry2.ContextId);
+            Assert.Equal(completedContext.Info.ContextName, entry2.ContextName);
+            Assert.Equal(completedContext.Info.Id, entry2.ContextId);
             
             Assert.NotNull(entry3);
             Assert.Equal(LogLevel.Trace, entry3.LogLevel);
@@ -876,8 +876,8 @@ namespace ContextRunner.Tests
 
                     return contextRunner.CreateAndAppendToActionExceptionsAsync<object>(innerContext =>
                     {
-                        innerContextName = innerContext.ContextName;
-                        innerContextId = innerContext.Id;
+                        innerContextName = innerContext.Info.ContextName;
+                        innerContextId = innerContext.Info.Id;
                         
                         innerContext.Logger.Trace(message);
 
@@ -897,8 +897,8 @@ namespace ContextRunner.Tests
             Assert.Equal(LogLevel.Trace, entry1.LogLevel);
             Assert.Equal(ContextLogEntryType.AlwaysShow, entry1.EntryType);
             Assert.Equal(message, entry1.Message);
-            Assert.Equal(completedContext.ContextName, entry1.ContextName);
-            Assert.Equal(completedContext.Id, entry1.ContextId);
+            Assert.Equal(completedContext.Info.ContextName, entry1.ContextName);
+            Assert.Equal(completedContext.Info.Id, entry1.ContextId);
             
             Assert.NotNull(entry2);
             Assert.Equal(LogLevel.Trace, entry2.LogLevel);
@@ -910,9 +910,9 @@ namespace ContextRunner.Tests
             Assert.NotNull(entry3);
             Assert.Equal(LogLevel.Trace, entry3.LogLevel);
             Assert.Equal(ContextLogEntryType.ContextEnd, entry3.EntryType);
-            Assert.Equal($"Context {completedContext.ContextName} has ended.", entry3.Message);
-            Assert.Equal(completedContext.ContextName, entry3.ContextName);
-            Assert.Equal(completedContext.Id, entry3.ContextId);
+            Assert.Equal($"Context {completedContext.Info.ContextName} has ended.", entry3.Message);
+            Assert.Equal(completedContext.Info.ContextName, entry3.ContextName);
+            Assert.Equal(completedContext.Info.Id, entry3.ContextId);
         }
         
         [Fact]
@@ -939,8 +939,8 @@ namespace ContextRunner.Tests
 
                     return contextRunner.CreateAndAppendToActionExceptionsAsync<object>(innerContext =>
                     {
-                        innerContextName = innerContext.ContextName;
-                        innerContextId = innerContext.Id;
+                        innerContextName = innerContext.Info.ContextName;
+                        innerContextId = innerContext.Info.Id;
                         
                         innerContext.Logger.Trace(message);
 
@@ -960,16 +960,16 @@ namespace ContextRunner.Tests
             Assert.NotNull(entry1);
             Assert.Equal(LogLevel.Trace, entry1.LogLevel);
             Assert.Equal(ContextLogEntryType.ContextStart, entry1.EntryType);
-            Assert.Equal($"Context {completedContext.ContextName} has started.", entry1.Message);
-            Assert.Equal(completedContext.ContextName, entry1.ContextName);
-            Assert.Equal(completedContext.Id, entry1.ContextId);
+            Assert.Equal($"Context {completedContext.Info.ContextName} has started.", entry1.Message);
+            Assert.Equal(completedContext.Info.ContextName, entry1.ContextName);
+            Assert.Equal(completedContext.Info.Id, entry1.ContextId);
             
             Assert.NotNull(entry2);
             Assert.Equal(LogLevel.Trace, entry2.LogLevel);
             Assert.Equal(ContextLogEntryType.AlwaysShow, entry2.EntryType);
             Assert.Equal(message, entry2.Message);
-            Assert.Equal(completedContext.ContextName, entry2.ContextName);
-            Assert.Equal(completedContext.Id, entry2.ContextId);
+            Assert.Equal(completedContext.Info.ContextName, entry2.ContextName);
+            Assert.Equal(completedContext.Info.Id, entry2.ContextId);
             
             Assert.NotNull(entry3);
             Assert.Equal(LogLevel.Trace, entry3.LogLevel);
@@ -1010,8 +1010,8 @@ namespace ContextRunner.Tests
 
                     return contextRunner.CreateAndAppendToActionExceptionsAsync<object>(innerContext =>
                     {
-                        innerContextName = innerContext.ContextName;
-                        innerContextId = innerContext.Id;
+                        innerContextName = innerContext.Info.ContextName;
+                        innerContextId = innerContext.Info.Id;
                         
                         innerContext.Logger.Trace(message);
 
@@ -1032,8 +1032,8 @@ namespace ContextRunner.Tests
             Assert.Equal(LogLevel.Trace, entry1.LogLevel);
             Assert.Equal(ContextLogEntryType.AlwaysShow, entry1.EntryType);
             Assert.Equal(message, entry1.Message);
-            Assert.Equal(completedContext.ContextName, entry1.ContextName);
-            Assert.Equal(completedContext.Id, entry1.ContextId);
+            Assert.Equal(completedContext.Info.ContextName, entry1.ContextName);
+            Assert.Equal(completedContext.Info.Id, entry1.ContextId);
             
             Assert.NotNull(entry2);
             Assert.Equal(LogLevel.Trace, entry2.LogLevel);
@@ -1052,9 +1052,9 @@ namespace ContextRunner.Tests
             Assert.NotNull(entry4);
             Assert.Equal(LogLevel.Trace, entry4.LogLevel);
             Assert.Equal(ContextLogEntryType.ContextEnd, entry4.EntryType);
-            Assert.Equal($"Context {completedContext.ContextName} has ended.", entry4.Message);
-            Assert.Equal(completedContext.ContextName, entry4.ContextName);
-            Assert.Equal(completedContext.Id, entry4.ContextId);
+            Assert.Equal($"Context {completedContext.Info.ContextName} has ended.", entry4.Message);
+            Assert.Equal(completedContext.Info.ContextName, entry4.ContextName);
+            Assert.Equal(completedContext.Info.Id, entry4.ContextId);
         }
         
         [Fact]
@@ -1082,8 +1082,8 @@ namespace ContextRunner.Tests
 
                     return contextRunner.CreateAndAppendToActionExceptionsAsync<object>(innerContext =>
                     {
-                        innerContextName = innerContext.ContextName;
-                        innerContextId = innerContext.Id;
+                        innerContextName = innerContext.Info.ContextName;
+                        innerContextId = innerContext.Info.Id;
                         
                         innerContext.Logger.Trace(message);
                         
@@ -1105,16 +1105,16 @@ namespace ContextRunner.Tests
             Assert.NotNull(entry1);
             Assert.Equal(LogLevel.Trace, entry1.LogLevel);
             Assert.Equal(ContextLogEntryType.ContextStart, entry1.EntryType);
-            Assert.Equal($"Context {completedContext.ContextName} has started.", entry1.Message);
-            Assert.Equal(completedContext.ContextName, entry1.ContextName);
-            Assert.Equal(completedContext.Id, entry1.ContextId);
+            Assert.Equal($"Context {completedContext.Info.ContextName} has started.", entry1.Message);
+            Assert.Equal(completedContext.Info.ContextName, entry1.ContextName);
+            Assert.Equal(completedContext.Info.Id, entry1.ContextId);
             
             Assert.NotNull(entry2);
             Assert.Equal(LogLevel.Trace, entry2.LogLevel);
             Assert.Equal(ContextLogEntryType.AlwaysShow, entry2.EntryType);
             Assert.Equal(message, entry2.Message);
-            Assert.Equal(completedContext.ContextName, entry2.ContextName);
-            Assert.Equal(completedContext.Id, entry2.ContextId);
+            Assert.Equal(completedContext.Info.ContextName, entry2.ContextName);
+            Assert.Equal(completedContext.Info.Id, entry2.ContextId);
             
             Assert.NotNull(entry3);
             Assert.Equal(LogLevel.Trace, entry3.LogLevel);
@@ -1155,8 +1155,8 @@ namespace ContextRunner.Tests
 
                     return contextRunner.CreateAndAppendToActionExceptionsAsync<object>(innerContext =>
                     {
-                        innerContextName = innerContext.ContextName;
-                        innerContextId = innerContext.Id;
+                        innerContextName = innerContext.Info.ContextName;
+                        innerContextId = innerContext.Info.Id;
                         
                         innerContext.Logger.Trace(message);
                         
@@ -1179,8 +1179,8 @@ namespace ContextRunner.Tests
             Assert.Equal(LogLevel.Trace, entry1.LogLevel);
             Assert.Equal(ContextLogEntryType.AlwaysShow, entry1.EntryType);
             Assert.Equal(message, entry1.Message);
-            Assert.Equal(completedContext.ContextName, entry1.ContextName);
-            Assert.Equal(completedContext.Id, entry1.ContextId);
+            Assert.Equal(completedContext.Info.ContextName, entry1.ContextName);
+            Assert.Equal(completedContext.Info.Id, entry1.ContextId);
             
             Assert.NotNull(entry2);
             Assert.Equal(LogLevel.Trace, entry2.LogLevel);
@@ -1199,9 +1199,9 @@ namespace ContextRunner.Tests
             Assert.NotNull(entry4);
             Assert.Equal(LogLevel.Trace, entry4.LogLevel);
             Assert.Equal(ContextLogEntryType.ContextEnd, entry4.EntryType);
-            Assert.Equal($"Context {completedContext.ContextName} has ended.", entry4.Message);
-            Assert.Equal(completedContext.ContextName, entry4.ContextName);
-            Assert.Equal(completedContext.Id, entry4.ContextId);
+            Assert.Equal($"Context {completedContext.Info.ContextName} has ended.", entry4.Message);
+            Assert.Equal(completedContext.Info.ContextName, entry4.ContextName);
+            Assert.Equal(completedContext.Info.Id, entry4.ContextId);
         }
     }
 }

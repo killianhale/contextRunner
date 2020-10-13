@@ -23,6 +23,7 @@ namespace ContextRunner.Base
 
         private readonly Stopwatch _stopwatch;
         private readonly IActionContext _parent;
+        private readonly IList<ISanitizer> _logSanitizers;
 
         private readonly ConcurrentDictionary<string, ActionContextStack> _namedStacks;
         private readonly ActionContextStack _stack;
@@ -42,6 +43,8 @@ namespace ContextRunner.Base
             ActionContextSettings settings = null,
             IEnumerable<ISanitizer> logSanitizers = null)
         {
+            _logSanitizers = logSanitizers?.ToList();
+            
             _stopwatch = new Stopwatch();
             _stopwatch.Start();
 
@@ -49,39 +52,48 @@ namespace ContextRunner.Base
             _namedStacks = _asyncLocalStacks.Value;
             _stack = _namedStacks.GetOrAdd(contextGroupName, new ActionContextStack());
 
-            ContextName = name;
-            ContextGroupName = contextGroupName;
-
             _parent = _stack.Peek();
             _stack.Push(this);
 
-            Id = Guid.NewGuid();
-            CausationId = _parent?.Id ?? Id;
-            CorrelationId = _stack.CorrelationId;
+            var id = Guid.NewGuid();
+            var causationId = _parent?.Info.Id ?? id;
+            var correlationId = _stack.CorrelationId;
 
-            if (IsRoot)
+            if (_parent == null)
             {
                 Settings = settings ?? new ActionContextSettings();
-
-                Depth = 0;
-                State = new ContextState(logSanitizers);
+                
+                Info = new ContextInfo(
+                    true,
+                    0,
+                    name,
+                    contextGroupName,
+                    _stack.CorrelationId);
+                
+                State = new ContextState(_logSanitizers);
                 Logger = new ContextLogger(this);
             }
             else
             {
                 Settings = _parent.Settings;
-
-                Depth = _parent.Depth + 1;
+                
+                Info = new ContextInfo(
+                    false,
+                    _parent.Info.Depth + 1,
+                    name,
+                    contextGroupName,
+                    _stack.CorrelationId,
+                    _parent?.Info?.Id);
+                
                 State = _parent.State;
-
                 Logger = _parent.Logger;
 
                 Logger.TrySetContext(this);
             }
 
-            var entryType = IsRoot ? ContextLogEntryType.ContextStart : ContextLogEntryType.ChildContextStart;
+            var entryType = Info.IsRoot ? ContextLogEntryType.ContextStart : ContextLogEntryType.ChildContextStart;
             Logger.LogAsType(Settings.ContextStartMessageLevel,
-                $"Context {ContextName} has started.", entryType);
+                $"Context {Info.ContextName} has started.", entryType);
 
             Loaded?.Invoke(this);
         }
@@ -92,37 +104,29 @@ namespace ContextRunner.Base
 
         public Action<IActionContext> OnDispose { get; set; }
 
-        public int Depth { get; }
-        public string ContextName { get; }
-        public string ContextGroupName { get; }
-
-        public Guid Id { get; }
-        public Guid CorrelationId { get; }
-        public Guid CausationId { get; }
-
-        public bool IsRoot => _parent == null;
+        public IContextInfo Info { get; }
 
         public TimeSpan TimeElapsed => _stopwatch.Elapsed;
 
         public bool ShouldSuppress()
         {
-            var isInSupressList = Settings.SuppressContextByNameList.Contains(ContextName);
+            var isInSuppressList = Settings.SuppressContextByNameList.Contains(Info.ContextName);
 
             var levelOfEntry = (int) Logger.GetHighestLogLevel();
             var levelToNotify = (int) Settings.SuppressContextsByNameUnderLevel;
 
             var entryIsUnderNotifyLevel = levelOfEntry < levelToNotify;
 
-            return isInSupressList && entryIsUnderNotifyLevel;
+            return isInSuppressList && entryIsUnderNotifyLevel;
         }
 
         public void Dispose()
         {
             _stopwatch.Stop();
 
-            var entryType = IsRoot ? ContextLogEntryType.ContextEnd : ContextLogEntryType.ChildContextEnd;
+            var entryType = Info.IsRoot ? ContextLogEntryType.ContextEnd : ContextLogEntryType.ChildContextEnd;
             Logger.LogAsType(Settings.ContextEndMessageLevel,
-                $"Context {ContextName} has ended.", entryType);
+                $"Context {Info.ContextName} has ended.", entryType);
 
             _stack.Pop();
 
@@ -134,7 +138,7 @@ namespace ContextRunner.Base
                 // Logger = null;
                 // State = null;
 
-                _namedStacks.Remove(ContextGroupName, out _);
+                _namedStacks.Remove(Info.ContextGroupName, out _);
 
                 if (!_namedStacks.Any())
                 {

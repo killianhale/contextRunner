@@ -60,54 +60,7 @@ namespace ContextRunner
                 return;
             }
 
-            var entry = context.Logger.GetSummaryLogEntry();
-            var level = entry.LogLevel;
-
-            var entries = context.Logger.LogEntries
-                .Select(e => new
-                {
-                    Level = e.LogLevel.ToString(),
-                    Message = e.Message,
-                    Context = e.ContextName,
-                    e.TimeElapsed
-                });
-
-            var props = new Dictionary<object, object>
-            {
-                { "entries", entries },
-                { "contextName", entry?.ContextName ?? context.ContextName },
-                { "contextId", context.Id },
-                { "timeElapsed", entry?.TimeElapsed ?? context.TimeElapsed }
-            };
-
-            var stateParams = context.State.Params
-                .Select(p => new KeyValuePair<string, object>($"{p.Key.Substring(0, 1).ToLower()}{p.Key.Substring(1)}", p.Value))
-                .Where(p => p.Value != null)
-                .Select(kvp =>
-                {
-                    var val = kvp.Value;
-
-                    if (val is Exception ex)
-                    {
-                        ex.Data.Clear();
-
-                        val = ex;
-                    }
-
-                    return new KeyValuePair<string, object>(kvp.Key, val);
-                })
-                .ToList();
-
-            stateParams.ForEach(p => props.Add(p.Key, p.Value));
-
-            var logObj = new
-            {
-                Time = DateTime.Now,
-                Level = level.ToString(),
-                Name = context.ContextName,
-                Message = entry.Message,
-                Properties = props
-            };
+            var logObj = ContextSummary.CreateFromContext(context);
 
             var logline = JsonConvert.SerializeObject(logObj);
 
@@ -127,7 +80,7 @@ namespace ContextRunner
             var context =  new ActionContext(contextGroupName, name, Settings, Sanitizers);
             context.State.SetParam("RunnerType", this.GetType().Name);
             
-            if (context.IsRoot)
+            if (context.Info.IsRoot)
             {
                 OnStart?.Invoke(context);
             }
@@ -184,7 +137,7 @@ namespace ContextRunner
             
             try
             {
-                if (context.IsRoot)
+                if (context.Info.IsRoot)
                 {
                     OnStart?.Invoke(context);
                 }
@@ -215,7 +168,7 @@ namespace ContextRunner
             
             try
             {
-                if (context.IsRoot)
+                if (context.Info.IsRoot)
                 {
                     OnStart?.Invoke(context);
                 }
@@ -248,7 +201,7 @@ namespace ContextRunner
             
             try
             {
-                if (context.IsRoot)
+                if (context.Info.IsRoot)
                 {
                     OnStart?.Invoke(context);
                 }
@@ -279,7 +232,7 @@ namespace ContextRunner
             
             try
             {
-                if (context.IsRoot)
+                if (context.Info.IsRoot)
                 {
                     OnStart?.Invoke(context);
                 }
@@ -306,7 +259,7 @@ namespace ContextRunner
             context.State.SetParam("Exception", ex);
 
             context.Logger.Log(Settings.ContextErrorMessageLevel,
-                $"An exception of type {ex.GetType().Name} was thrown within the context '{context.ContextName}'!");
+                $"An exception of type {ex.GetType().Name} was thrown within the context '{context.Info.ContextName}'!");
 
             ex.Data.Add("ContextExceptionHandled", true);
             ex.Data.Add("ContextParams", context.State.Params);

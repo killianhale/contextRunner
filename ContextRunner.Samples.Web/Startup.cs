@@ -1,20 +1,14 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
-using ContextRunner.FlatIO;
 using ContextRunner.Http;
 using ContextRunner.NLog;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
@@ -78,7 +72,6 @@ namespace ContextRunner.Samples.Web
 
             services.Configure<NlogContextRunnerConfig>(Configuration.GetSection("NlogContextRunner"));
             services.Configure<ActionContextMiddlewareConfig>(Configuration.GetSection("ContextRunnerHttp"));
-            services.Configure<FlatIOContextRunnerConfig>(Configuration.GetSection("FlatIOContextRunner"));
 
             // services.AddSingleton<IContextRunner, ActionContextRunner>();
             services.AddSingleton<IContextRunner, NlogContextRunner>();

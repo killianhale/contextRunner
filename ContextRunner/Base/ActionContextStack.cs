@@ -1,24 +1,28 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
+using ContextRunner.Logging;
+using ContextRunner.State;
 
 namespace ContextRunner.Base
 {
     public class ActionContextStack
     {
-        private readonly ConcurrentStack<IActionContext> _namedContexts;
+        private readonly ConcurrentStack<IActionContext> _contexts;
 
         public ActionContextStack()
         {
-            _namedContexts = new ConcurrentStack<IActionContext>();
+            _contexts = new ConcurrentStack<IActionContext>();
 
             CorrelationId = Guid.NewGuid();
         }
 
         public Guid CorrelationId { get; }
         
-        public bool IsEmpty => _namedContexts.IsEmpty;
-        public bool ContainsOnlyRoot => _namedContexts.Count == 1;
+        public bool IsEmpty => _contexts.IsEmpty;
+        public bool ContainsOnlyRoot => _contexts.Count == 1;
 
         public void Push(IActionContext context)
         {
@@ -27,19 +31,19 @@ namespace ContextRunner.Base
                 throw new ArgumentNullException(nameof(context));
             }
             
-            _namedContexts.Push(context);
+            _contexts.Push(context);
         }
 
         public IActionContext Pop()
         {
-            _namedContexts.TryPop(out var result);
+            _contexts.TryPop(out var result);
 
             return result;
         }
 
         public IActionContext Peek()
         {
-            _namedContexts.TryPeek(out var result);
+            _contexts.TryPeek(out var result);
 
             return result;
         }

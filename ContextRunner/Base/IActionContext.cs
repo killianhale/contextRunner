@@ -7,17 +7,12 @@ namespace ContextRunner.Base
     public interface IActionContext : IDisposable
     {
         ActionContextSettings Settings { get; }
+        
+        IContextInfo Info { get; }
         IContextLogger Logger { get; }
         IContextState State { get; }
-        int Depth { get; }
-        string ContextName { get; }
-        string ContextGroupName { get; }
-        Guid Id { get; }
-        Guid CorrelationId { get; }
-        Guid CausationId { get; }
-        bool IsRoot { get; }
+        
         TimeSpan TimeElapsed { get; }
         bool ShouldSuppress();
-        void Dispose();
     }
 }

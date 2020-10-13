@@ -10,6 +10,7 @@ using ContextRunner.Logging;
 using ContextRunner.State;
 using ContextRunner.State.Sanitizers;
 using ContextRunner.Base;
+using ContextRunner.NLog.Internal;
 using NLog.Config;
 using NLog.Targets;
 
@@ -22,13 +23,9 @@ namespace ContextRunner.NLog
             Runner = new NlogContextRunner(config);
         }
         
-        public static readonly ConcurrentQueue<(DateTime Timestamp, ContextLogEntry LogEntry)> OutOfContextLogs = new ConcurrentQueue<(DateTime, ContextLogEntry)>();
-        public static readonly ConcurrentDictionary<Guid, DateTime> ContextStartTimestamps = new ConcurrentDictionary<Guid, DateTime>();
-
         private readonly NlogContextRunnerConfig _config;
-        private readonly MemoryTarget _memoryLogTarget;
+        private readonly IMemoryLogService _memoryLogService;
         private IDisposable _logHandle;
-        private readonly Timer _logCleanupTimer;
 
         public NlogContextRunner(IOptionsMonitor<NlogContextRunnerConfig> options) : this(options.CurrentValue)
         {
@@ -37,6 +34,7 @@ namespace ContextRunner.NLog
         public NlogContextRunner(NlogContextRunnerConfig config)
         {
             _config = config;
+            _memoryLogService = new MemoryLogService(config);
 
             var maxDepth = config?.MaxSanitizerDepth ?? 10;
 
@@ -46,18 +44,6 @@ namespace ContextRunner.NLog
             Sanitizers = _config?.SanitizedProperties != null && _config.SanitizedProperties.Length > 0
                 ? new[] { new KeyBasedSanitizer(_config.SanitizedProperties, maxDepth) }
                 : new[] { new KeyBasedSanitizer(new string[0]) };
-
-            if (!string.IsNullOrEmpty(_config?.MemoryTargetLogName))
-            {
-                _memoryLogTarget = LogManager.Configuration.FindTargetByName(_config.MemoryTargetLogName) as MemoryTarget;
-            
-                _logCleanupTimer = new Timer(state => {
-                    if (ContextStartTimestamps.Keys.Count == 0)
-                    {
-                        _memoryLogTarget?.Logs?.Clear();
-                    }
-                }, null, TimeSpan.Zero, TimeSpan.FromMinutes(5));
-            }
         }
 
         private ActionContextSettings GetActionContextSettings()
@@ -70,17 +56,17 @@ namespace ContextRunner.NLog
                 SuppressChildContextStartMessages = _config.SuppressChildContextStartMessages,
                 AlwaysShowContextEndMessagesOnError = _config.AlwaysShowContextEndMessagesOnError,
                 AlwaysShowContextStartMessagesOnError = _config.AlwaysShowContextStartMessagesOnError,
-                ContextEndMessageLevel = ConvertToMsLogLevel(_config.ContextEndMessageLevel),
-                ContextStartMessageLevel = ConvertToMsLogLevel(_config.ContextStartMessageLevel),
-                ContextErrorMessageLevel = ConvertToMsLogLevel(_config.ContextErrorMessageLevel),
+                ContextEndMessageLevel = NlogLogLevelUtil.ConvertToMsLogLevel(_config.ContextEndMessageLevel),
+                ContextStartMessageLevel = NlogLogLevelUtil.ConvertToMsLogLevel(_config.ContextStartMessageLevel),
+                ContextErrorMessageLevel = NlogLogLevelUtil.ConvertToMsLogLevel(_config.ContextErrorMessageLevel),
                 SuppressContextByNameList = _config.SuppressContextByNameList,
-                SuppressContextsByNameUnderLevel = ConvertToMsLogLevel(_config.SuppressContextsByNameUnderLevel)
+                SuppressContextsByNameUnderLevel = NlogLogLevelUtil.ConvertToMsLogLevel(_config.SuppressContextsByNameUnderLevel)
             };
         }
 
         private void Setup(IActionContext context)
         {
-            ContextStartTimestamps[context.Id] = DateTime.Now;
+            _memoryLogService.AddTimestamp(context.Info.Id);
             
             _logHandle = context.Logger.WhenEntryLogged.Subscribe(
                 entry => LogEntry(context, entry),
@@ -92,21 +78,21 @@ namespace ContextRunner.NLog
         {
             LogManager.Flush();
             
-            RemoveIrrelevantMemoryLogs();
+            _memoryLogService.RemoveIrrelevantMemoryLogs();
         }
 
         private void LogEntry(IActionContext context, ContextLogEntry entry)
         {
-            GetPendingMemoryLogs();
+            _memoryLogService.GetPendingMemoryLogs();
             
             var prefix = _config.EntryLogNamePrefix ?? "entry_";
             var logger = LogManager.GetLogger(prefix + entry.ContextName);
 
-            var level = ConvertFromMsLogLevel(entry.LogLevel);
-            var eventParams = GetEventParams(context, false, entry);
+            var level = NlogLogLevelUtil.ConvertFromMsLogLevel(entry.LogLevel);
+            var summary = ContextSummary.CreateFromContext(context);
 
             var e = new LogEventInfo(level, logger.Name, entry.Message);
-            eventParams.ToList().ForEach(x => e.Properties.Add(x.Key, x.Value));
+            summary.Data.ToList().ForEach(x => e.Properties.Add(x.Key, x.Value));
 
             logger.Log(e);
             LogManager.Flush();
@@ -124,35 +110,54 @@ namespace ContextRunner.NLog
                 return;
             }
             
-            GetPendingMemoryLogs();
+            _memoryLogService.GetPendingMemoryLogs();
             
             if(!context.Logger.LogEntries.Any())
             {
                 return;
             }
 
-            var entry = context.Logger.GetSummaryLogEntry();
-            var level = ConvertFromMsLogLevel(entry.LogLevel);
-            var eventParams = GetEventParams(context, true);
-
             var prefix = _config.ContextLogNamePrefix ?? "context_";
-            var logger = LogManager.GetLogger(prefix + context.ContextName);
-
-            var @event = new LogEventInfo(level, logger.Name, entry.Message);
-            eventParams.ToList().ForEach(x =>  @event.Properties.Add(x.Key, x.Value));
-
-            var timestamp = ContextStartTimestamps.GetOrAdd(context.Id, _ => DateTime.Now);
-            var logs = GetMemoryLogsSince(timestamp);
+            var logger = LogManager.GetLogger(prefix + context.Info.ContextName);
             
-            logs.AddRange(context.Logger.LogEntries);
+            var summary = ContextSummary.CreateFromContext(context);
+
+            var entry = CreateLogEntry(
+                logger.Name,
+                context.Info.Id,
+                summary
+            );
+            
+            logger.Log(entry);
+
+            LogManager.Flush();
+            
+            _memoryLogService.RemoveTimestamp(context.Info.Id);
+        }
+
+        private LogEventInfo CreateLogEntry(
+            string nlogLoggerName,
+            Guid contextId,
+            ContextSummary summary
+           )
+        {
+            var level = NlogLogLevelUtil.ConvertFromMsLogLevel(summary.Level);
+
+            var @event = new LogEventInfo(level, nlogLoggerName, summary.Message);
+            summary.Data.ToList().ForEach(x =>  @event.Properties.Add(x.Key, x.Value));
+
+            var timestamp = _memoryLogService.GetTimestamp(contextId);
+            var logs = _memoryLogService.GetMemoryLogsSince(timestamp);
+            
+            logs.AddRange(summary.Entries);
             
             var entries = logs
                 .OrderBy(e => e.Timestamp)
                 .Select(e => new
                 {
                     Timestamp = e.Timestamp,
-                    Level = ConvertFromMsLogLevel(e.LogLevel).ToString(),
-                    Message = AddSpacing(e),
+                    Level = NlogLogLevelUtil.ConvertFromMsLogLevel(e.LogLevel).ToString(),
+                    Message = e.Message,
                     ContextName = e.ContextName,
                     ContextId = e.ContextId,
                     e.TimeElapsed
@@ -160,161 +165,7 @@ namespace ContextRunner.NLog
 
             @event.Properties.Add("entries", entries);
 
-            logger.Log(@event);
-
-            LogManager.Flush();
-            
-            ContextStartTimestamps.Remove(context.Id, out _);
-        }
-
-        private string AddSpacing(ContextLogEntry entry)
-        {
-            if(_config?.AddSpacingToEntries == null || !_config.AddSpacingToEntries)
-            {
-                return entry.Message;
-            }
-
-            var spacing = "";
-
-            for (var x = 0; x < entry.ContextDepth; x++)
-            {
-                spacing += "\t";
-            }
-
-            return spacing + entry.Message;
-        }
-
-        private IDictionary<object, object> GetEventParams(IActionContext context, bool isContext, ContextLogEntry entry = null)
-        {
-            var result = new Dictionary<object, object>();
-
-            if(entry != null)
-            {
-                result.Add("contextDepth", entry?.ContextDepth ?? context.Depth);
-            }
-
-            result.Add("timeElapsed", entry?.TimeElapsed ?? context.TimeElapsed);
-            if (isContext)
-            {
-                result.Add("contextGroupName", context.ContextGroupName);
-                result.Add("baseContextName", context.ContextName);
-                result.Add("contextId", context.Id);
-            }
-            else
-            {
-                result.Add("contextName", entry?.ContextName ?? context.ContextName);
-                result.Add("contextId", context.Id);
-                result.Add("contextCausationId", context.CausationId);
-                result.Add("contextCorrelationId", context.CorrelationId);
-            }
-
-            foreach (var kvp in context.State.Params)
-            {
-                if (!(kvp.Value is Exception ex)) continue;
-                
-                ex.Data["ContextParams"] = null;
-                ex.Data["ContextEntries"] = null;
-            }
-
-            var sanitizedParams = context.State.Params
-                .Select(p => new KeyValuePair<string, object>($"{p.Key.Substring(0, 1).ToLower()}{p.Key.Substring(1)}", p.Value))
-                .Where(p => p.Value != null)
-                .ToList();
-
-            sanitizedParams.ForEach(p => result.Add(p.Key, p.Value));
-
-            LogManager.Flush();
-
-            return result;
-        }
-
-        private LogLevel ConvertFromMsLogLevel(MsLogLevel level)
-        {
-            return level switch
-            {
-                MsLogLevel.Trace => LogLevel.Trace,
-                MsLogLevel.Debug => LogLevel.Debug,
-                MsLogLevel.Information => LogLevel.Info,
-                MsLogLevel.Warning => LogLevel.Warn,
-                MsLogLevel.Error => LogLevel.Error,
-                MsLogLevel.Critical => LogLevel.Fatal,
-                _ => LogLevel.Off,
-            };
-        }
-
-        private MsLogLevel ConvertToMsLogLevel(LogLevel level)
-        {
-            var result = MsLogLevel.None;
-
-            if (level == LogLevel.Trace)
-            {
-                result = MsLogLevel.Trace;
-            }
-            else if (level == LogLevel.Debug)
-            {
-                result = MsLogLevel.Debug;
-            }
-            else if (level == LogLevel.Info)
-            {
-                result = MsLogLevel.Information;
-            }
-            else if (level == LogLevel.Warn)
-            {
-                result = MsLogLevel.Warning;
-            }
-            else if (level == LogLevel.Error)
-            {
-                result = MsLogLevel.Error;
-            }
-            else if (level == LogLevel.Fatal)
-            {
-                result = MsLogLevel.Critical;
-            }
-
-            return result;
-        }
-
-        private void GetPendingMemoryLogs()
-        {
-            if (_memoryLogTarget == null)
-            {
-                return;
-            }
-
-            var logCopy = new List<string>();
-            
-            _memoryLogTarget.Logs.ToList().ForEach(l => logCopy.Add(l));
-            _memoryLogTarget.Logs.Clear();
-
-            logCopy.Select(log => (DateTime.Now, new ContextLogEntry(-1, null, Guid.Empty, log, MsLogLevel.Information, TimeSpan.Zero, DateTime.UtcNow, ContextLogEntryType.OutOfContext)))
-                .ToList()
-                .ForEach(entry => OutOfContextLogs.Enqueue(entry));
-        }
-
-        private void RemoveIrrelevantMemoryLogs()
-        {
-            var timestamps = ContextStartTimestamps.Values.ToList();
-
-            if (!timestamps.Any()) return;
-            
-            var minTimestamp = timestamps.Min();
-
-            var currentLogs = OutOfContextLogs.ToList();
-            currentLogs.Where(log => log.Timestamp < minTimestamp)
-                .ToList()
-                .ForEach(log => OutOfContextLogs.TryDequeue(out _));
-            
-        }
-
-        private List<ContextLogEntry> GetMemoryLogsSince(DateTime timestamp)
-        {
-            var logs = OutOfContextLogs
-                .ToList()
-                .Where(log => log.Timestamp >= timestamp)
-                .Select(log => log.LogEntry)
-                .ToList();
-
-            return logs;
+            return @event;
         }
 
         public override void Dispose()

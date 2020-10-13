@@ -13,6 +13,8 @@ namespace ContextRunner.Logging
         private IActionContext _context;
         private readonly Subject<ContextLogEntry> _logSubject;
 
+        private IContextInfo ContextInfo => _context?.Info;
+
         public ContextLogger(IActionContext context)
         {
             _context = context;
@@ -44,7 +46,7 @@ namespace ContextRunner.Logging
 
         public void CompleteIfRoot()
         {
-            if (!_context.IsRoot)
+            if (!ContextInfo.IsRoot)
             {
                 return;
             }
@@ -122,16 +124,14 @@ namespace ContextRunner.Logging
             LogEntries.Clear();
 
             nonErrorEntries.ForEach(entry => LogEntries.Enqueue(entry));
-
-            var test = true;
         }
 
         public void LogAsType(LogLevel level, string message, ContextLogEntryType entryType = ContextLogEntryType.AlwaysShow)
         {
             var entry = new ContextLogEntry(
-                _context.Depth,
-                _context.ContextName,
-                _context.Id,
+                _context.Info.Depth,
+                _context.Info.ContextName,
+                _context.Info.Id,
                 message,
                 level,
                 _context.TimeElapsed,
@@ -215,7 +215,7 @@ namespace ContextRunner.Logging
 
         public ContextLogEntry GetSummaryLogEntry()
         {
-            var message = $"The context '{_context.ContextName}' ended successfully.";
+            var message = $"The context '{ContextInfo.ContextName}' ended successfully.";
 
             var highestLevel = GetHighestLogLevel();
             var highestLevelCount = LogEntries.Count(entry => entry.LogLevel == highestLevel);
@@ -224,23 +224,23 @@ namespace ContextRunner.Logging
             if (highestLevel == LogLevel.Critical)
             {
                 message = highestLevelCount == 1
-                    ? $"The context '{_context.ContextName}' ended with a critical error. {highestFirstMessage}"
-                    : $"The context '{_context.ContextName}' ended with multiple critical errors.";
+                    ? $"The context '{ContextInfo.ContextName}' ended with a critical error. {highestFirstMessage}"
+                    : $"The context '{ContextInfo.ContextName}' ended with multiple critical errors.";
             }
             else if (highestLevel == LogLevel.Error)
             {
                 message = highestLevelCount == 1
-                    ? $"The context '{_context.ContextName}' ended with an error. {highestFirstMessage}"
-                    : $"The context '{_context.ContextName}' ended with multiple errors.";
+                    ? $"The context '{ContextInfo.ContextName}' ended with an error. {highestFirstMessage}"
+                    : $"The context '{ContextInfo.ContextName}' ended with multiple errors.";
             }
             else if (highestLevel == LogLevel.Warning)
             {
                 message = highestLevelCount == 1
-                    ? $"The context '{_context.ContextName}' ended with a warning. {highestFirstMessage}"
-                    : $"The context '{_context.ContextName}' ended with multiple warnings.";
+                    ? $"The context '{ContextInfo.ContextName}' ended with a warning. {highestFirstMessage}"
+                    : $"The context '{ContextInfo.ContextName}' ended with multiple warnings.";
             }
 
-            var result = new ContextLogEntry(0, _context.ContextName, _context.Id, message, highestLevel, _context.TimeElapsed, DateTime.UtcNow, ContextLogEntryType.Summary);
+            var result = new ContextLogEntry(0, ContextInfo.ContextName, ContextInfo.Id, message, highestLevel, _context.TimeElapsed, DateTime.UtcNow, ContextLogEntryType.Summary);
 
             return result;
         }
