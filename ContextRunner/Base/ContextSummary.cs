@@ -22,7 +22,43 @@ namespace ContextRunner.Base
         public static ContextSummary CreateFromContext(IActionContext context)
         {
             var summary = context.Logger.GetSummaryLogEntry();
-            
+            var message = context.Settings.PropertiesToAddToSummaryList
+                // .Where(p => context.State.ContainsKey(p))
+                .Aggregate(summary.Message, (current, p) =>
+                {
+                    var keys = p.Split(':', StringSplitOptions.RemoveEmptyEntries);
+
+                    object lookup = null;
+
+                    for (var x = 0; x < keys.Length; x++)
+                    {
+                        if (x == 0 && context.State.ContainsKey(keys[x]))
+                        {
+                            lookup = context.State.GetParam(keys[x]);
+                        }
+                        else if (lookup == null)
+                        {
+                            break;
+                        }
+                        else if (lookup is IDictionary<string, object> dict)
+                        {
+                            lookup = dict.ContainsKey(keys[x])
+                                ? dict[keys[x]]
+                                : null;
+                        }
+                        else
+                        {
+                            lookup = lookup?.GetType()?.GetProperty(keys[x]);
+                        }
+                    }
+
+                    var result = lookup != null
+                        ? current + $" {p}: {lookup}"
+                        : current;
+
+                    return result;
+                });
+
             var data = new Dictionary<string, object>();
 
             var sanitizedParams = context.State.Params
@@ -40,13 +76,13 @@ namespace ContextRunner.Base
 
             sanitizedParams.ForEach(p => data.Add(p.Key, p.Value));
             
-            data.Add("contextInfo", context.Info);
             data.Add("timeElapsed", context.TimeElapsed);
+            data.Add("contextInfo", context.Info);
             
             return new ContextSummary(
                 summary.Timestamp,
                 summary.LogLevel,
-                summary.Message,
+                message,
                 context.Logger.LogEntries.ToList(),
                 data
             );

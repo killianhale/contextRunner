@@ -21,6 +21,8 @@ namespace ContextRunner.Base
 
             SuppressContextByNameList = new string[0];
             SuppressContextsByNameUnderLevel = LogLevel.Warning;
+            
+            PropertiesToAddToSummaryList = new string[0];
         }
 
         public bool EnableContextStartMessage { get; set; }
@@ -39,5 +41,7 @@ namespace ContextRunner.Base
 
         public string[] SuppressContextByNameList { get; set; }
         public LogLevel SuppressContextsByNameUnderLevel { get; set; }
+        
+        public string[] PropertiesToAddToSummaryList { get; set; }
     }
 }

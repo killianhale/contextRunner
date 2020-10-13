@@ -26,9 +26,19 @@ namespace ContextRunner.State
             }
         }
 
+        public bool ContainsKey(string name)
+        {
+            return _params.ContainsKey(name);
+        }
+
         public T GetParam<T>(string name) where T : class
         {
             return _params.GetOrAdd(name, null) as T;
+        }
+
+        public object GetParam(string name)
+        {
+            return _params.GetOrAdd(name, "");
         }
 
         public void SetParam<T>(string name, T value) where T : class

@@ -60,7 +60,8 @@ namespace ContextRunner.NLog
                 ContextStartMessageLevel = NlogLogLevelUtil.ConvertToMsLogLevel(_config.ContextStartMessageLevel),
                 ContextErrorMessageLevel = NlogLogLevelUtil.ConvertToMsLogLevel(_config.ContextErrorMessageLevel),
                 SuppressContextByNameList = _config.SuppressContextByNameList,
-                SuppressContextsByNameUnderLevel = NlogLogLevelUtil.ConvertToMsLogLevel(_config.SuppressContextsByNameUnderLevel)
+                SuppressContextsByNameUnderLevel = NlogLogLevelUtil.ConvertToMsLogLevel(_config.SuppressContextsByNameUnderLevel),
+                PropertiesToAddToSummaryList = _config.PropertiesToAddToSummaryList
             };
         }
 
@@ -125,9 +126,19 @@ namespace ContextRunner.NLog
             
             summaries.ForEach(summary =>
             {
-                var contextInfo = summary.Data["contextInfo"] as IContextInfo;
+                var contextInfo = summary.Data["contextInfo"] as IRootContextInfo;
                 var checkpoint = contextInfo?.Checkpoint;
                 checkpoint = checkpoint == null ? string.Empty : $"_{checkpoint}";
+
+                summary.Data["contextInfo"] = contextInfo == null
+                    ? null
+                    : new
+                {
+                    contextInfo.Checkpoint,
+                    contextInfo.Id,
+                    contextInfo.ContextName,
+                    contextInfo.ContextGroupName
+                };
                 
                 var logger = LogManager.GetLogger($"{prefix}{context.Info.ContextName}{checkpoint}" );
                 

@@ -63,7 +63,8 @@ namespace ContextRunner
             }
 
             var summaries = ContextSummary.Summarize(context);
-            var logLines = summaries.Select(JsonConvert.SerializeObject);
+            var logLines = summaries.Select(s =>
+                JsonConvert.SerializeObject(s, new Newtonsoft.Json.Converters.StringEnumConverter()));
 
             logLines.ToList().ForEach(Console.WriteLine);
         }

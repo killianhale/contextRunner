@@ -52,12 +52,10 @@ namespace ContextRunner.Base
 
         public void CreateCheckpoint(string name, IActionContext context)
         {
+            context.Info.Checkpoint = name;
+            
             var summary = ContextSummary.CreateFromContext(context);
-
-            if (summary.Data["contextInfo"] is IContextInfo contextInfo)
-            {
-                contextInfo.Checkpoint = name;
-            }
+            summary.Data["contextInfo"] = context.Info;
             
             _checkpoints.Enqueue(summary);
         }

@@ -75,7 +75,6 @@ namespace ContextRunner.Samples.Web
 
             // services.AddSingleton<IContextRunner, ActionContextRunner>();
             services.AddSingleton<IContextRunner, NlogContextRunner>();
-            // services.AddSingleton<IContextRunner, FlatIOContextRunner>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
