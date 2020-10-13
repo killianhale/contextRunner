@@ -69,5 +69,10 @@ namespace ContextRunner.State
 
             return success;
         }
+
+        public void Clear()
+        {
+            _params.Clear();
+        }
     }
 }

@@ -36,6 +36,7 @@ namespace ContextRunner.Base
         
         public string ContextName { get; }
         public string ContextGroupName { get; }
+        public string Checkpoint { get; set; }
 
         public Guid Id { get; }
         public Guid CorrelationId { get; }

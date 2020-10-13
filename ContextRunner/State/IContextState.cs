@@ -10,5 +10,6 @@ namespace ContextRunner.State
         void AppendParam<T>(string name, T value) where T : class;
         T RemoveParam<T>(string name) where T : class;
         bool RemoveParam(string name);
+        void Clear();
     }
 }

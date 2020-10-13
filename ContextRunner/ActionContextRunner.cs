@@ -55,16 +55,17 @@ namespace ContextRunner
 
         private void LogContext(IActionContext context)
         {
-            if (!context.Logger.LogEntries.Any() || context.ShouldSuppress())
+            var shouldLog = context.GetCheckpoints().Any() || context.Logger.LogEntries.Any();
+            
+            if (!shouldLog || context.ShouldSuppress())
             {
                 return;
             }
 
-            var logObj = ContextSummary.CreateFromContext(context);
+            var summaries = ContextSummary.Summarize(context);
+            var logLines = summaries.Select(JsonConvert.SerializeObject);
 
-            var logline = JsonConvert.SerializeObject(logObj);
-
-            Console.WriteLine(logline);
+            logLines.ToList().ForEach(Console.WriteLine);
         }
 
         public virtual void Dispose()

@@ -11,10 +11,12 @@ namespace ContextRunner.Base
     public class ActionContextStack
     {
         private readonly ConcurrentStack<IActionContext> _contexts;
+        private readonly ConcurrentQueue<ContextSummary> _checkpoints;
 
         public ActionContextStack()
         {
             _contexts = new ConcurrentStack<IActionContext>();
+            _checkpoints = new ConcurrentQueue<ContextSummary>();
 
             CorrelationId = Guid.NewGuid();
         }
@@ -46,6 +48,23 @@ namespace ContextRunner.Base
             _contexts.TryPeek(out var result);
 
             return result;
+        }
+
+        public void CreateCheckpoint(string name, IActionContext context)
+        {
+            var summary = ContextSummary.CreateFromContext(context);
+
+            if (summary.Data["contextInfo"] is IContextInfo contextInfo)
+            {
+                contextInfo.Checkpoint = name;
+            }
+            
+            _checkpoints.Enqueue(summary);
+        }
+
+        public List<ContextSummary> GetCheckpoints()
+        {
+            return _checkpoints.ToList();
         }
     }
 }

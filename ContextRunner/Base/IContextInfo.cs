@@ -8,6 +8,7 @@ namespace ContextRunner.Base
         int Depth { get; }
         string ContextName { get; }
         string ContextGroupName { get; }
+        public string Checkpoint { get; set; }
         Guid Id { get; }
         Guid CorrelationId { get; }
         Guid CausationId { get; }

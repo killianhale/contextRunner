@@ -37,12 +37,45 @@ namespace ContextRunner.Samples.Web.Controllers
 
                 var rng = new Random();
                 return Enumerable.Range(1, 5).Select(index => new WeatherForecast
+                    {
+                        Date = DateTime.Now.AddDays(index),
+                        TemperatureC = rng.Next(-20, 55),
+                        Summary = Summaries[rng.Next(Summaries.Length)]
+                    })
+                    .ToArray();
+            }, "WeatherService");
+        }
+
+        [HttpGet]
+        [Route("checkpoints")]
+        public async Task<IEnumerable<WeatherForecast>> GetWithCheckpoints()
+        {
+            return await _runner.RunActionAsync<IEnumerable<WeatherForecast>>(async context =>
+            {
+                context.Logger.Debug("Simulating fetching weather information...");
+                context.State.SetParam("WeatherInfo", new
                 {
-                    Date = DateTime.Now.AddDays(index),
-                    TemperatureC = rng.Next(-20, 55),
-                    Summary = Summaries[rng.Next(Summaries.Length)]
-                })
-                .ToArray();
+                    Source = "National Weather Service",
+                    Data = "{ \"thing\": \"value of thing\" }"
+                });
+                
+                context.CreateCheckpoint("Checkpoint1");
+                
+                context.Logger.Debug("Now that we've reached the checkpoint, let's do another thing...");
+                context.State.SetParam("ResultOfAnotherThing", new
+                {
+                    Source = "National Weather Service 2",
+                    Data = "{ \"thing 2\": \"value of another thing\" }"
+                });
+
+                var rng = new Random();
+                return Enumerable.Range(1, 5).Select(index => new WeatherForecast
+                    {
+                        Date = DateTime.Now.AddDays(index),
+                        TemperatureC = rng.Next(-20, 55),
+                        Summary = Summaries[rng.Next(Summaries.Length)]
+                    })
+                    .ToArray();
             }, "WeatherService");
         }
 

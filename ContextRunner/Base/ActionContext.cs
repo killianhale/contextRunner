@@ -108,6 +108,19 @@ namespace ContextRunner.Base
 
         public TimeSpan TimeElapsed => _stopwatch.Elapsed;
 
+        public void CreateCheckpoint(string name)
+        {
+            _stack.CreateCheckpoint(name, this);
+            
+            State.Clear();
+            Logger.LogEntries.Clear();
+        }
+        
+        public List<ContextSummary> GetCheckpoints()
+        {
+            return _stack.GetCheckpoints();
+        }
+
         public bool ShouldSuppress()
         {
             var isInSuppressList = Settings.SuppressContextByNameList.Contains(Info.ContextName);

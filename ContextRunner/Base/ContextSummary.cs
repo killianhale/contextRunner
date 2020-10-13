@@ -9,6 +9,16 @@ namespace ContextRunner.Base
 {
     public class ContextSummary
     {
+        public static List<ContextSummary> Summarize(IActionContext context)
+        {
+            var checkpoints = context.GetCheckpoints();
+            var summaries = checkpoints;
+            
+            summaries.Add(CreateFromContext(context));
+
+            return summaries;
+        }
+
         public static ContextSummary CreateFromContext(IActionContext context)
         {
             var summary = context.Logger.GetSummaryLogEntry();

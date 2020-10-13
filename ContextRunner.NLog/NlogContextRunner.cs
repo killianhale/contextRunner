@@ -112,24 +112,34 @@ namespace ContextRunner.NLog
             
             _memoryLogService.GetPendingMemoryLogs();
             
-            if(!context.Logger.LogEntries.Any())
+            var shouldLog = context.GetCheckpoints().Any() || context.Logger.LogEntries.Any();
+            
+            if (!shouldLog)
             {
                 return;
             }
 
             var prefix = _config.ContextLogNamePrefix ?? "context_";
-            var logger = LogManager.GetLogger(prefix + context.Info.ContextName);
             
-            var summary = ContextSummary.CreateFromContext(context);
-
-            var entry = CreateLogEntry(
-                logger.Name,
-                context.Info.Id,
-                summary
-            );
+            var summaries = ContextSummary.Summarize(context);
             
-            logger.Log(entry);
-
+            summaries.ForEach(summary =>
+            {
+                var contextInfo = summary.Data["contextInfo"] as IContextInfo;
+                var checkpoint = contextInfo?.Checkpoint;
+                checkpoint = checkpoint == null ? string.Empty : $"_{checkpoint}";
+                
+                var logger = LogManager.GetLogger($"{prefix}{context.Info.ContextName}{checkpoint}" );
+                
+                var entry = CreateLogEntry(
+                    logger.Name,
+                    context.Info.Id,
+                    summary
+                );
+                
+                logger.Log(entry);
+            });
+            
             LogManager.Flush();
             
             _memoryLogService.RemoveTimestamp(context.Info.Id);
