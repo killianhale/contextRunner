@@ -46,8 +46,6 @@ namespace ContextRunner.NLog
 
         private ActionContextSettings GetActionContextSettings()
         {
-            // _config ??= new NlogContextRunnerConfig();
-            
             return new ActionContextSettings
             {
                 EnableContextEndMessage = _config.EnableContextEndMessage,

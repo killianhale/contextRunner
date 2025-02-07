@@ -6,6 +6,7 @@ using ContextRunner.Http;
 using ContextRunner.NLog;
 using ContextRunner.Samples.Web;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
@@ -17,7 +18,6 @@ var apiAssembly = Assembly.GetExecutingAssembly();
 
 var builder = WebApplication.CreateBuilder();
 
-// builder.Logging.AddConsole().SetMinimumLevel(LogLevel.Debug);
 builder.Logging.ClearProviders();
 builder.Host.UseNLog(
     new NLogAspNetCoreOptions
@@ -25,6 +25,8 @@ builder.Host.UseNLog(
         RemoveLoggerFactoryFilter = false
     }
 );
+
+builder.WebHost.UseKestrel(option => option.AddServerHeader = false);
 
 builder.Services.AddControllers();
 
