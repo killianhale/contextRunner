@@ -1,32 +1,41 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 
 namespace ContextRunner.Samples.Web.Controllers
 {
+    /// <summary>
+    /// 
+    /// </summary>
     [ApiController]
     [Route("[controller]")]
     public class WeatherForecastController : ControllerBase
     {
-        private static readonly string[] Summaries = new[]
-        {
+        private static readonly string[] Summaries =
+        [
             "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-        };
+        ];
 
         private readonly IContextRunner _runner;
 
-        public WeatherForecastController(IContextRunner runner = null)
+        /// <summary>
+        /// Constructor for DI
+        /// </summary>
+        /// <param name="runner"></param>
+        public WeatherForecastController(IContextRunner? runner = null)
         {
             _runner = runner ?? ActionContextRunner.Runner;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         [HttpGet]
-        public async Task<IEnumerable<WeatherForecast>> Get()
+        public IEnumerable<WeatherForecast> Get()
         {
-            return await _runner.RunActionAsync<IEnumerable<WeatherForecast>>(async context =>
+            return _runner.CreateAndAppendToActionExceptions<IEnumerable<WeatherForecast>>(context =>
             {
                 context.Logger.Debug("Simulating fetching weather information...");
                 context.State.SetParam("WeatherInfo", new
@@ -43,14 +52,18 @@ namespace ContextRunner.Samples.Web.Controllers
                         Summary = Summaries[rng.Next(Summaries.Length)]
                     })
                     .ToArray();
-            }, "WeatherService");
+            });
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         [HttpGet]
         [Route("checkpoints")]
-        public async Task<IEnumerable<WeatherForecast>> GetWithCheckpoints()
+        public IEnumerable<WeatherForecast> GetWithCheckpoints()
         {
-            return await _runner.RunActionAsync<IEnumerable<WeatherForecast>>(async context =>
+            return _runner.CreateAndAppendToActionExceptions<IEnumerable<WeatherForecast>>(context =>
             {
                 context.Logger.Debug("Simulating fetching weather information...");
                 context.State.SetParam("WeatherInfo", new
@@ -76,46 +89,55 @@ namespace ContextRunner.Samples.Web.Controllers
                         Summary = Summaries[rng.Next(Summaries.Length)]
                     })
                     .ToArray();
-            }, "WeatherService");
+            });
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         [HttpGet]
         [Route("error")]
-        public async Task<IEnumerable<WeatherForecast>> GetError()
+        public IEnumerable<WeatherForecast> GetError()
         {
-            return await _runner.RunActionAsync<IEnumerable<WeatherForecast>>(async context =>
-            {
-                throw new Exception("Sample exception!");
-            }, "WeatherService");
+            return _runner.CreateAndAppendToActionExceptions<IEnumerable<WeatherForecast>>(_ =>
+                throw new Exception("Sample exception!"));
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         [HttpGet]
         [Route("error_caught")]
-        public async Task<IEnumerable<WeatherForecast>> GetCaughtError()
+        public IEnumerable<WeatherForecast> GetCaughtError()
         {
             try
             {
-                return await _runner.RunActionAsync<IEnumerable<WeatherForecast>>(async context =>
-                {
-                    throw new Exception("Sample exception!");
-                }, "WeatherService");
+                return _runner.CreateAndAppendToActionExceptions<IEnumerable<WeatherForecast>>(_ =>
+                    throw new Exception("Sample exception!"));
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return new List<WeatherForecast>();
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         [HttpGet]
         [Route("error_override")]
-        public async Task<IEnumerable<WeatherForecast>> GetOverridenError()
+        public IEnumerable<WeatherForecast> GetOverridenError()
         {
             try
             {
-                return await _runner.CreateAndAppendToActionExceptionsAsync<IEnumerable<WeatherForecast>>(async context =>
-                    {
-                        throw new Exception("Sample exception!");
-                    },
+                return _runner.CreateAndAppendToActionExceptions<IEnumerable<WeatherForecast>>(
+                    _ => throw new Exception("Sample exception!"),
                     (ex, context) =>
                     {
                         ex.Data.Add("ContextExceptionHandled", true);
@@ -124,27 +146,36 @@ namespace ContextRunner.Samples.Web.Controllers
                         context.State.SetParam("IgnoredException", ex);
 
                         return ex;
-                    },
-                    "WeatherService");
+                    });
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return new List<WeatherForecast>();
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         [HttpGet]
         [Route("error_wo_context")]
-        public async Task<IEnumerable<WeatherForecast>> GetErrorWithoutContext()
+        public IEnumerable<WeatherForecast> GetErrorWithoutContext()
         {
-            using var context = _runner.Create("WeatherService");
+            using var context = _runner.Create();
             throw new Exception("Sample exception!");
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="forcast"></param>
+        /// <returns></returns>
         [HttpPost]
-        public async Task<WeatherForecast> Post(WeatherForecast forcast)
+        public WeatherForecast Post(WeatherForecast forcast)
         {
-            return await _runner.RunActionAsync(async context =>
+            return _runner.CreateAndAppendToActionExceptions(context =>
             {
                 context.Logger.Debug("Simulating saving weather information...");
                 context.State.SetParam("WeatherInfo", new
@@ -180,7 +211,7 @@ namespace ContextRunner.Samples.Web.Controllers
                 });
 
                 return forcast;
-            }, "WeatherService");
+            });
         }
     }
 }

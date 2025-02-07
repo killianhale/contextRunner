@@ -10,7 +10,7 @@ using Newtonsoft.Json;
 
 namespace ContextRunner.Samples.Web
 {
-    public class ExceptionMiddleware
+    internal class ExceptionMiddleware
     {
         private readonly RequestDelegate _next;
 

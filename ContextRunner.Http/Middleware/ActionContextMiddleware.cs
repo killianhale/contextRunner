@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Dynamic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace ContextRunner.Http.Middleware
@@ -18,18 +15,18 @@ namespace ContextRunner.Http.Middleware
         private readonly IContextRunner _runner;
         private readonly ActionContextMiddlewareConfig _config;
 
-        public ActionContextMiddleware(RequestDelegate next, IContextRunner runner = null, IOptionsMonitor<ActionContextMiddlewareConfig> configMonitor = null)
+        public ActionContextMiddleware(RequestDelegate next, IContextRunner? runner = null, IOptionsMonitor<ActionContextMiddlewareConfig>? configMonitor = null)
         {
             _next = next;
             _runner = runner ?? ActionContextRunner.Runner;
-            _config = configMonitor?.CurrentValue;
+            _config = configMonitor?.CurrentValue ?? new ActionContextMiddlewareConfig();
         }
 
         public async Task Invoke(HttpContext httpContext)
         {
-            var routeData = httpContext?.Request?.RouteValues;
-            var controller = routeData?["controller"];
-            var action = routeData?["action"];
+            var routeData = httpContext.Request.RouteValues;
+            var controller = routeData["controller"];
+            var action = routeData["action"];
 
             var name = controller != null && action != null
                 ? $"{controller}_{action}"
@@ -37,7 +34,7 @@ namespace ContextRunner.Http.Middleware
 
             if (name == null)
             {
-                if(httpContext?.Request != null && IsPathWhitelisted(httpContext.Request.Path))
+                if(IsPathWhitelisted(httpContext.Request.Path))
                 {
                     name = httpContext.Request.Path.ToString();
                     name = name.Substring(_config.PathPrefixWhitelist.Length);
@@ -57,7 +54,7 @@ namespace ContextRunner.Http.Middleware
                 requestInfo["Path"] = httpContext.Request.Path.Value;
                 requestInfo["Method"] = httpContext.Request.Method;
 
-                if(httpContext.Request?.ContentType?.IndexOf("json") >= 0)
+                if(httpContext.Request.ContentType?.IndexOf("json") >= 0)
                 {
                     var requestBody = await GetRequestBody(httpContext.Request);
 
@@ -67,11 +64,6 @@ namespace ContextRunner.Http.Middleware
                 context.State.SetParam("httpRequest", requestInfo);
 
                 var responseBody = await RunNext(httpContext);
-
-                if(httpContext.Response == null)
-                {
-                    return;
-                }
 
                 var statusCode = httpContext.Response.StatusCode;
                 var responseInfo = GetFilteredHeaders(httpContext.Response.Headers);
@@ -94,12 +86,7 @@ namespace ContextRunner.Http.Middleware
 
         private bool IsPathWhitelisted(PathString path)
         {
-            if(_config == null)
-            {
-                return true;
-            }
-
-            var whitelistPath = !string.IsNullOrEmpty(_config?.PathPrefixWhitelist)
+            var whitelistPath = !string.IsNullOrEmpty(_config.PathPrefixWhitelist)
                 ? _config.PathPrefixWhitelist
                 : null;
             var pathString = path.ToString();
@@ -111,11 +98,11 @@ namespace ContextRunner.Http.Middleware
 
         private async Task<string> GetRequestBody(HttpRequest request)
         {
-            var result = "";
+            string result;
 
             request.EnableBuffering();
 
-            using (StreamReader reader
+            using (var reader
                       = new StreamReader(request.Body, Encoding.UTF8, true, 1024, true))
             {
                 result = await reader.ReadToEndAsync();
@@ -126,7 +113,7 @@ namespace ContextRunner.Http.Middleware
             return result;
         }
 
-        private Dictionary<string, object> GetFilteredHeaders(IHeaderDictionary headers)
+        private Dictionary<string, object?> GetFilteredHeaders(IHeaderDictionary headers)
         {
             var ignoreList = new[] {
                     "Cookie",
@@ -142,17 +129,16 @@ namespace ContextRunner.Http.Middleware
                     "Upgrade-Insecure-Requests"
                 };
 
-            var result = headers
+            Dictionary<string, object?> result = headers
                 .Where(header => !ignoreList.Contains(header.Key))
                 .ToDictionary(
-                    header => header.Key,
-                    header => (object)header.Value.ToString()
+                    header => header.Key, object? (header) => header.Value.ToString()
                     );
 
             return result;
         }
 
-        private object GetFilteredBody(string responseBody)
+        private object? GetFilteredBody(string responseBody)
         {
             if(string.IsNullOrEmpty(responseBody))
             {
@@ -166,25 +152,22 @@ namespace ContextRunner.Http.Middleware
 
         private async Task<string> RunNext(HttpContext httpContext)
         {
-            Stream originalBody = httpContext.Response.Body;
+            var originalBody = httpContext.Response.Body;
 
-            string responseBody = null;
+            string? responseBody;
 
             try
             {
-                using (var memStream = new MemoryStream())
-                {
-                    httpContext.Response.Body = memStream;
+                using var memStream = new MemoryStream();
+                httpContext.Response.Body = memStream;
 
-                    await _next(httpContext);
+                await _next(httpContext);
 
-                    memStream.Position = 0;
-                    responseBody = new StreamReader(memStream).ReadToEnd();
+                memStream.Position = 0;
+                responseBody = await new StreamReader(memStream).ReadToEndAsync();
 
-                    memStream.Position = 0;
-                    await memStream.CopyToAsync(originalBody);
-                }
-
+                memStream.Position = 0;
+                await memStream.CopyToAsync(originalBody);
             }
             finally
             {

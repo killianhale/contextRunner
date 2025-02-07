@@ -1,13 +1,10 @@
-﻿using System;
-using Microsoft.Extensions.Logging;
-
-namespace ContextRunner.Logging
+﻿namespace ContextRunner.Logging
 {
     public class ContextLogEntry
     {
         public ContextLogEntry(
             int contextDepth,
-            string contextName,
+            string? contextName,
             Guid contextId,
             string message,
             LogLevel logLevel,
@@ -27,7 +24,7 @@ namespace ContextRunner.Logging
 
         public ContextLogEntryType EntryType { get; }
         public int ContextDepth { get; }
-        public string ContextName { get; }
+        public string? ContextName { get; }
         public Guid ContextId { get; }
         public string Message { get; }
         public LogLevel LogLevel { get; }

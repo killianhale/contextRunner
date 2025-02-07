@@ -1,47 +1,24 @@
-﻿using System;
-using Microsoft.Extensions.Logging;
-
-namespace ContextRunner.Base
+﻿namespace ContextRunner.Base
 {
     public class ActionContextSettings
     {
-        public ActionContextSettings()
-        {
-            EnableContextStartMessage = false;
-            SuppressChildContextStartMessages = false;
-            ContextStartMessageLevel = LogLevel.Trace;
+        public bool EnableContextStartMessage { get; init; }
+        public bool EnableContextEndMessage { get; init; } = true;
 
-            EnableContextEndMessage = true;
-            SuppressChildContextEndMessages = false;
-            ContextEndMessageLevel = LogLevel.Trace;
+        public bool SuppressChildContextStartMessages { get; init; }
+        public bool SuppressChildContextEndMessages { get; init; }
 
-            AlwaysShowContextEndMessagesOnError = true;
+        public bool AlwaysShowContextEndMessagesOnError { get; init; } = true;
+        public bool AlwaysShowContextStartMessagesOnError { get; init; }
 
-            ContextErrorMessageLevel = LogLevel.Error;
+        public LogLevel ContextStartMessageLevel { get; init; } = LogLevel.Trace;
+        public LogLevel ContextEndMessageLevel { get; init; } = LogLevel.Trace;
 
-            SuppressContextByNameList = new string[0];
-            SuppressContextsByNameUnderLevel = LogLevel.Warning;
-            
-            PropertiesToAddToSummaryList = new string[0];
-        }
+        public LogLevel ContextErrorMessageLevel { get; init; } = LogLevel.Error;
 
-        public bool EnableContextStartMessage { get; set; }
-        public bool EnableContextEndMessage { get; set; }
+        public string[] SuppressContextByNameList { get; init; } = [];
+        public LogLevel SuppressContextsByNameUnderLevel { get; init; } = LogLevel.Warning;
 
-        public bool SuppressChildContextStartMessages { get; set; }
-        public bool SuppressChildContextEndMessages { get; set; }
-
-        public bool AlwaysShowContextEndMessagesOnError { get; set; }
-        public bool AlwaysShowContextStartMessagesOnError { get; set; }
-
-        public LogLevel ContextStartMessageLevel { get; set; }
-        public LogLevel ContextEndMessageLevel { get; set; }
-
-        public LogLevel ContextErrorMessageLevel { get; set; }
-
-        public string[] SuppressContextByNameList { get; set; }
-        public LogLevel SuppressContextsByNameUnderLevel { get; set; }
-        
-        public string[] PropertiesToAddToSummaryList { get; set; }
+        public string[] PropertiesToAddToSummaryList { get; init; } = [];
     }
 }

@@ -29,8 +29,8 @@ namespace ContextRunner.Tests
                 {
                     context.Logger.Information("This is a test!");
 
-                    var _ = spy.Object.ToString();
-                }, "Test");
+                    return spy.Object.ToString();
+                });
             });
             
             spy.Verify(mock => mock.ToString(), Times.Once);
@@ -47,12 +47,12 @@ namespace ContextRunner.Tests
             
             var (_, result) = factory.Create<object>( contextRunner =>
             {
-                return contextRunner.CreateAndAppendToActionExceptions(context =>
+                return contextRunner.CreateAndAppendToActionExceptions<string>(context =>
                 {
                     context.Logger.Information("This is a test!");
 
-                    return spy.Object.ToString();
-                }, "Test");
+                    return spy.Object.ToString() ?? string.Empty;
+                });
             });
             
             spy.Verify(mock => mock.ToString(), Times.Once);
@@ -76,8 +76,8 @@ namespace ContextRunner.Tests
 
                     await Task.Delay(5);
 
-                    var _ = spy.Object.ToString();
-                }, "Test");
+                    return spy.Object.ToString() ?? string.Empty;
+                });
             });
             
             spy.Verify(mock => mock.ToString(), Times.Once);
@@ -100,8 +100,8 @@ namespace ContextRunner.Tests
 
                     await Task.Delay(5);
 
-                    return spy.Object.ToString();
-                }, "Test");
+                    return spy.Object.ToString() ?? string.Empty;
+                });
             });
             
             spy.Verify(mock => mock.ToString(), Times.Once);
@@ -123,12 +123,12 @@ namespace ContextRunner.Tests
             var completedContext = factory.Create(contextRunner =>
             {
                 contextRunner.CreateAndAppendToActionExceptions(
-                    context => { context.Logger.Log(level, "This is a test"); }, "Test");
+                    context => { context.Logger.Log(level, "This is a test"); });
             });
             
             Assert.NotNull(completedContext);
-            Assert.Equal(1, completedContext?.Logger?.LogEntries.Count);
-            Assert.Equal(level, completedContext.Logger?.LogEntries?.FirstOrDefault()?.LogLevel);
+            Assert.Single(completedContext.Logger.LogEntries);
+            Assert.Equal(level, completedContext.Logger.LogEntries.FirstOrDefault()?.LogLevel);
         }
 
         [Theory]
@@ -143,20 +143,20 @@ namespace ContextRunner.Tests
         {
             var factory = new ActionContextRunnerFactory();
 
-            var (completedContext, _) = factory.Create<object>(contextRunner =>
+            var (completedContext, _) = factory.Create<object?>(contextRunner =>
             {
-                return contextRunner.CreateAndAppendToActionExceptions<object>(
+                return contextRunner.CreateAndAppendToActionExceptions<object?>(
                     context =>
                     {
                         context.Logger.Log(level, "This is a test");
 
                         return null;
-                    }, "Test");
+                    });
             });
             
             Assert.NotNull(completedContext);
-            Assert.Equal(1, completedContext?.Logger?.LogEntries.Count);
-            Assert.Equal(level, completedContext.Logger?.LogEntries?.FirstOrDefault()?.LogLevel);
+            Assert.Single(completedContext.Logger.LogEntries);
+            Assert.Equal(level, completedContext.Logger.LogEntries.FirstOrDefault()?.LogLevel);
         }
 
         [Theory]
@@ -178,12 +178,12 @@ namespace ContextRunner.Tests
                     context.Logger.Log(level, "This is a test");
 
                     await Task.Delay(5);
-                }, "Test");
+                });
             });
             
             Assert.NotNull(completedContext);
-            Assert.Equal(1, completedContext?.Logger?.LogEntries.Count);
-            Assert.Equal(level, completedContext.Logger?.LogEntries?.FirstOrDefault()?.LogLevel);
+            Assert.Single(completedContext.Logger.LogEntries);
+            Assert.Equal(level, completedContext.Logger.LogEntries.FirstOrDefault()?.LogLevel);
         }
 
         [Theory]
@@ -198,21 +198,21 @@ namespace ContextRunner.Tests
         {
             var factory = new ActionContextRunnerFactory();
 
-            var (completedContext, result) = await factory.CreateAsync<object>(async contextRunner =>
+            var (completedContext, _) = await factory.CreateAsync<object?>(async contextRunner =>
             {
-                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object>(async context =>
+                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object?>(async context =>
                 {
                     context.Logger.Log(level, "This is a test");
 
                     await Task.Delay(5);
 
                     return null;
-                }, "Test");
+                });
             });
             
             Assert.NotNull(completedContext);
-            Assert.Equal(1, completedContext?.Logger?.LogEntries.Count);
-            Assert.Equal(level, completedContext.Logger?.LogEntries?.FirstOrDefault()?.LogLevel);
+            Assert.Single(completedContext.Logger.LogEntries);
+            Assert.Equal(level, completedContext.Logger.LogEntries.FirstOrDefault()?.LogLevel);
         }
 
         [Theory]
@@ -257,12 +257,12 @@ namespace ContextRunner.Tests
                         {
                             context.Logger.Log(level, "This is a test");
                         }
-                    }, "Test");
+                    });
             });
             
             Assert.NotNull(completedContext);
-            Assert.Equal(levels.Length, completedContext?.Logger?.LogEntries.Count);
-            Assert.Equal(expected, completedContext.Logger?.GetHighestLogLevel());
+            Assert.Equal(levels.Length, completedContext.Logger.LogEntries.Count);
+            Assert.Equal(expected, completedContext.Logger.GetHighestLogLevel());
         }
 
         [Theory]
@@ -298,9 +298,9 @@ namespace ContextRunner.Tests
         {
             var factory = new ActionContextRunnerFactory();
 
-            var (completedContext, _) = factory.Create<object>(contextRunner =>
+            var (completedContext, _) = factory.Create<object?>(contextRunner =>
             {
-                return contextRunner.CreateAndAppendToActionExceptions<object>(
+                return contextRunner.CreateAndAppendToActionExceptions<object?>(
                     context =>
                     {
                         foreach (var level in levels)
@@ -309,12 +309,12 @@ namespace ContextRunner.Tests
                         }
 
                         return null;
-                    }, "Test");
+                    });
             });
             
             Assert.NotNull(completedContext);
-            Assert.Equal(levels.Length, completedContext?.Logger?.LogEntries.Count);
-            Assert.Equal(expected, completedContext.Logger?.GetHighestLogLevel());
+            Assert.Equal(levels.Length, completedContext.Logger.LogEntries.Count);
+            Assert.Equal(expected, completedContext.Logger.GetHighestLogLevel());
         }
 
         [Theory]
@@ -360,12 +360,12 @@ namespace ContextRunner.Tests
                         }
 
                         await Task.Delay(5);
-                    }, "Test");
+                    });
             });
             
             Assert.NotNull(completedContext);
-            Assert.Equal(levels.Length, completedContext?.Logger?.LogEntries.Count);
-            Assert.Equal(expected, completedContext.Logger?.GetHighestLogLevel());
+            Assert.Equal(levels.Length, completedContext.Logger.LogEntries.Count);
+            Assert.Equal(expected, completedContext.Logger.GetHighestLogLevel());
         }
 
         [Theory]
@@ -401,9 +401,9 @@ namespace ContextRunner.Tests
         {
             var factory = new ActionContextRunnerFactory();
 
-            var (completedContext, _) = await factory.CreateAsync<object>(async contextRunner =>
+            var (completedContext, _) = await factory.CreateAsync<object?>(async contextRunner =>
             {
-                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object>(async context =>
+                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object?>(async context =>
                     {
                         foreach (var level in levels)
                         {
@@ -413,12 +413,12 @@ namespace ContextRunner.Tests
                         await Task.Delay(5);
 
                         return null;
-                    }, "Test");
+                    });
             });
             
             Assert.NotNull(completedContext);
-            Assert.Equal(levels.Length, completedContext?.Logger?.LogEntries.Count);
-            Assert.Equal(expected, completedContext.Logger?.GetHighestLogLevel());
+            Assert.Equal(levels.Length, completedContext.Logger.LogEntries.Count);
+            Assert.Equal(expected, completedContext.Logger.GetHighestLogLevel());
         }
 
         [Fact]
@@ -433,9 +433,9 @@ namespace ContextRunner.Tests
             
             var completedContexts = new ConcurrentQueue<IActionContext>();
 
-            var result = Parallel.ForEach(contextNames, new ParallelOptions() { MaxDegreeOfParallelism = 20} ,name =>
+            var result = Parallel.ForEach(contextNames, new ParallelOptions { MaxDegreeOfParallelism = 20} ,name =>
             {
-                IDisposable logHandle = null;
+                IDisposable? logHandle = null;
                 
                 var contextRunner = new ActionContextRunner(c =>
                 {
@@ -448,12 +448,12 @@ namespace ContextRunner.Tests
                 {
                     context.Logger.Information("This is a test!");
                     
-                    
+                    // ReSharper disable once AccessToDisposedClosure
                     contextRunner.CreateAndAppendToActionExceptions(nestedContext =>
                     {
                         nestedContext.Logger.Information("This is a test!");
                     }, name);
-                }, "Run");
+                });
                 
                 logHandle?.Dispose();
                 contextRunner.Dispose();
@@ -481,7 +481,7 @@ namespace ContextRunner.Tests
 
             var result = Parallel.ForEach(contextNames, new ParallelOptions() { MaxDegreeOfParallelism = 20} ,name =>
             {
-                IDisposable logHandle = null;
+                IDisposable? logHandle = null;
                 
                 var contextRunner = new ActionContextRunner(c =>
                 {
@@ -494,12 +494,12 @@ namespace ContextRunner.Tests
                 {
                     context.Logger.Information("This is a test!");
                     
-                    
+                    // ReSharper disable once AccessToDisposedClosure
                     contextRunner.CreateAndAppendToActionExceptions(nestedContext =>
                     {
                         nestedContext.Logger.Information("This is a test!");
                     }, name);
-                }, "Run", "Test");
+                }, contextGroupName: "Test");
                 
                 logHandle?.Dispose();
                 contextRunner.Dispose();
@@ -518,7 +518,7 @@ namespace ContextRunner.Tests
         {
             var completedContexts = new ConcurrentQueue<IActionContext>();
 
-            IDisposable logHandle = null;
+            IDisposable? logHandle = null;
             
             var contextRunner = new ActionContextRunner(c =>
             {
@@ -527,7 +527,7 @@ namespace ContextRunner.Tests
                     () => completedContexts.Enqueue(c));
             });
 
-            using(var context = contextRunner.Create("Test"))
+            using(var context = contextRunner.Create())
             {
                 context.Logger.Information("This is a test!");
             }
@@ -548,16 +548,16 @@ namespace ContextRunner.Tests
                 EnableContextEndMessage = false
             });
 
-            var (completedContext, _) = await factory.CreateAsync<object>(async contextRunner =>
+            var (completedContext, _) = await factory.CreateAsync<object?>(async contextRunner =>
             {
-                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object>(async context =>
+                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object?>(async context =>
                 {
                     context.Logger.Trace(message, true);
 
                     await Task.Delay(5);
 
                     return null;
-                }, "Test");
+                });
             });
             
             Assert.NotNull(completedContext);
@@ -575,9 +575,9 @@ namespace ContextRunner.Tests
                 EnableContextEndMessage = false
             });
 
-            var (completedContext, _) = await factory.CreateAsync<object>(async contextRunner =>
+            var (completedContext, _) = await factory.CreateAsync<object?>(async contextRunner =>
             {
-                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object>(async context =>
+                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object?>(async context =>
                 {
                     context.Logger.Trace(message, true);
                     
@@ -586,13 +586,13 @@ namespace ContextRunner.Tests
                     await Task.Delay(5);
 
                     return null;
-                }, "Test");
+                });
             });
             
             Assert.NotNull(completedContext);
             Assert.Single(completedContext.Logger.LogEntries);
             
-            var entry = completedContext.Logger.LogEntries?.FirstOrDefault();
+            var entry = completedContext.Logger.LogEntries.FirstOrDefault();
             
             Assert.NotNull(entry);
             Assert.Equal(LogLevel.Trace, entry.LogLevel);
@@ -614,9 +614,9 @@ namespace ContextRunner.Tests
                 EnableContextStartMessage = true
             });
 
-            var (completedContext, _) = await factory.CreateAsync<object>(async contextRunner =>
+            var (completedContext, _) = await factory.CreateAsync<object?>(async contextRunner =>
             {
-                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object>(async context =>
+                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object?>(async context =>
                 {
                     context.Logger.Trace(message);
                     
@@ -625,7 +625,7 @@ namespace ContextRunner.Tests
                     await Task.Delay(5);
 
                     return null;
-                }, "Test");
+                });
             });
             
             Assert.NotNull(completedContext);
@@ -662,9 +662,9 @@ namespace ContextRunner.Tests
                 AlwaysShowContextStartMessagesOnError = true
             });
 
-            var (completedContext, _) = await factory.CreateAsync<object>(async contextRunner =>
+            var (completedContext, _) = await factory.CreateAsync<object?>(async contextRunner =>
             {
-                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object>(async context =>
+                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object?>(async context =>
                 {
                     context.Logger.Trace(message);
                     
@@ -673,7 +673,7 @@ namespace ContextRunner.Tests
                     await Task.Delay(5);
 
                     return null;
-                }, "Test");
+                });
             });
             
             Assert.NotNull(completedContext);
@@ -708,9 +708,9 @@ namespace ContextRunner.Tests
                 EnableContextEndMessage = true,
             });
 
-            var (completedContext, _) = await factory.CreateAsync<object>(async contextRunner =>
+            var (completedContext, _) = await factory.CreateAsync<object?>(async contextRunner =>
             {
-                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object>(async context =>
+                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object?>(async context =>
                 {
                     context.Logger.Trace(message);
                     
@@ -719,7 +719,7 @@ namespace ContextRunner.Tests
                     await Task.Delay(5);
 
                     return null;
-                }, "Test");
+                });
             });
             
             Assert.NotNull(completedContext);
@@ -755,9 +755,9 @@ namespace ContextRunner.Tests
                 EnableContextEndMessage = false,
             });
 
-            var (completedContext, _) = await factory.CreateAsync<object>(async contextRunner =>
+            var (completedContext, _) = await factory.CreateAsync<object?>(async contextRunner =>
             {
-                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object>(async context =>
+                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object?>(async context =>
                 {
                     context.Logger.Trace(message);
                     
@@ -766,7 +766,7 @@ namespace ContextRunner.Tests
                     await Task.Delay(5);
 
                     return null;
-                }, "Test");
+                });
             });
             
             Assert.NotNull(completedContext);
@@ -803,25 +803,26 @@ namespace ContextRunner.Tests
                 SuppressChildContextStartMessages = true
             });
 
-            string innerContextName = null;
+            string? innerContextName = null;
             var innerContextId = Guid.Empty;
 
-            var (completedContext, _) = await factory.CreateAsync<object>(async contextRunner =>
+            var (completedContext, _) = await factory.CreateAsync<object?>(async contextRunner =>
             {
-                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object>(context =>
+                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object?>(context =>
                 {
                     context.Logger.Trace(message);
 
-                    return contextRunner.CreateAndAppendToActionExceptionsAsync<object>(innerContext =>
+                    return contextRunner.CreateAndAppendToActionExceptionsAsync<object?>(innerContext =>
                     {
                         innerContextName = innerContext.Info.ContextName;
                         innerContextId = innerContext.Info.Id;
                         
                         innerContext.Logger.Trace(message);
 
-                        return Task.FromResult((object) null);
+                        return Task.FromResult<object?>(null);
+                        // ReSharper disable once ExplicitCallerInfoArgument
                     }, "Inner");
-                }, "Test");
+                });
             });
             
             Assert.NotNull(completedContext);
@@ -865,25 +866,26 @@ namespace ContextRunner.Tests
                 EnableContextStartMessage = false
             });
 
-            string innerContextName = null;
+            string? innerContextName = null;
             var innerContextId = Guid.Empty;
 
-            var (completedContext, _) = await factory.CreateAsync<object>(async contextRunner =>
+            var (completedContext, _) = await factory.CreateAsync<object?>(async contextRunner =>
             {
-                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object>(context =>
+                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object?>(context =>
                 {
                     context.Logger.Trace(message);
 
-                    return contextRunner.CreateAndAppendToActionExceptionsAsync<object>(innerContext =>
+                    return contextRunner.CreateAndAppendToActionExceptionsAsync<object?>(innerContext =>
                     {
                         innerContextName = innerContext.Info.ContextName;
                         innerContextId = innerContext.Info.Id;
                         
                         innerContext.Logger.Trace(message);
 
-                        return Task.FromResult((object) null);
+                        return Task.FromResult<object?>(null);
+                        // ReSharper disable once ExplicitCallerInfoArgument
                     }, "Inner");
-                }, "Test");
+                });
             });
             
             Assert.NotNull(completedContext);
@@ -928,25 +930,26 @@ namespace ContextRunner.Tests
                 SuppressChildContextStartMessages = false
             });
 
-            string innerContextName = null;
+            string? innerContextName = null;
             var innerContextId = Guid.Empty;
 
-            var (completedContext, _) = await factory.CreateAsync<object>(async contextRunner =>
+            var (completedContext, _) = await factory.CreateAsync<object?>(async contextRunner =>
             {
-                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object>(context =>
+                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object?>(context =>
                 {
                     context.Logger.Trace(message);
 
-                    return contextRunner.CreateAndAppendToActionExceptionsAsync<object>(innerContext =>
+                    return contextRunner.CreateAndAppendToActionExceptionsAsync<object?>(innerContext =>
                     {
                         innerContextName = innerContext.Info.ContextName;
                         innerContextId = innerContext.Info.Id;
                         
                         innerContext.Logger.Trace(message);
 
-                        return Task.FromResult((object) null);
+                        return Task.FromResult<object?>(null);
+                        // ReSharper disable once ExplicitCallerInfoArgument
                     }, "Inner");
-                }, "Test");
+                });
             });
             
             Assert.NotNull(completedContext);
@@ -999,25 +1002,26 @@ namespace ContextRunner.Tests
                 SuppressChildContextEndMessages = false
             });
 
-            string innerContextName = null;
+            string? innerContextName = null;
             var innerContextId = Guid.Empty;
 
-            var (completedContext, _) = await factory.CreateAsync<object>(async contextRunner =>
+            var (completedContext, _) = await factory.CreateAsync<object?>(async contextRunner =>
             {
-                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object>(context =>
+                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object?>(context =>
                 {
                     context.Logger.Trace(message);
 
-                    return contextRunner.CreateAndAppendToActionExceptionsAsync<object>(innerContext =>
+                    return contextRunner.CreateAndAppendToActionExceptionsAsync<object?>(innerContext =>
                     {
                         innerContextName = innerContext.Info.ContextName;
                         innerContextId = innerContext.Info.Id;
                         
                         innerContext.Logger.Trace(message);
 
-                        return Task.FromResult((object) null);
+                        return Task.FromResult<object?>(null);
+                        // ReSharper disable once ExplicitCallerInfoArgument
                     }, "Inner");
-                }, "Test");
+                });
             });
             
             Assert.NotNull(completedContext);
@@ -1071,16 +1075,16 @@ namespace ContextRunner.Tests
                 SuppressChildContextStartMessages = true
             });
 
-            string innerContextName = null;
+            string? innerContextName = null;
             var innerContextId = Guid.Empty;
 
-            var (completedContext, _) = await factory.CreateAsync<object>(async contextRunner =>
+            var (completedContext, _) = await factory.CreateAsync<object?>(async contextRunner =>
             {
-                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object>(context =>
+                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object?>(context =>
                 {
                     context.Logger.Trace(message);
 
-                    return contextRunner.CreateAndAppendToActionExceptionsAsync<object>(innerContext =>
+                    return contextRunner.CreateAndAppendToActionExceptionsAsync<object?>(innerContext =>
                     {
                         innerContextName = innerContext.Info.ContextName;
                         innerContextId = innerContext.Info.Id;
@@ -1089,9 +1093,10 @@ namespace ContextRunner.Tests
                         
                         innerContext.Logger.ErrorToEmit = new Exception("THis is a pretend error!");
 
-                        return Task.FromResult((object) null);
+                        return Task.FromResult<object?>(null);
+                        // ReSharper disable once ExplicitCallerInfoArgument
                     }, "Inner");
-                }, "Test");
+                });
             });
             
             Assert.NotNull(completedContext);
@@ -1144,16 +1149,16 @@ namespace ContextRunner.Tests
                 AlwaysShowContextEndMessagesOnError = true
             });
 
-            string innerContextName = null;
+            string? innerContextName = null;
             var innerContextId = Guid.Empty;
 
-            var (completedContext, _) = await factory.CreateAsync<object>(async contextRunner =>
+            var (completedContext, _) = await factory.CreateAsync<object?>(async contextRunner =>
             {
-                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object>(context =>
+                return await contextRunner.CreateAndAppendToActionExceptionsAsync<object?>(context =>
                 {
                     context.Logger.Trace(message);
 
-                    return contextRunner.CreateAndAppendToActionExceptionsAsync<object>(innerContext =>
+                    return contextRunner.CreateAndAppendToActionExceptionsAsync<object?>(innerContext =>
                     {
                         innerContextName = innerContext.Info.ContextName;
                         innerContextId = innerContext.Info.Id;
@@ -1162,9 +1167,10 @@ namespace ContextRunner.Tests
                         
                         innerContext.Logger.ErrorToEmit = new Exception("THis is a pretend error!");
 
-                        return Task.FromResult((object) null);
+                        return Task.FromResult<object?>(null);
+                        // ReSharper disable once ExplicitCallerInfoArgument
                     }, "Inner");
-                }, "Test");
+                });
             });
             
             Assert.NotNull(completedContext);

@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using ContextRunner.Logging;
-using ContextRunner.State;
-using Microsoft.Extensions.Logging;
 
 namespace ContextRunner.Base
 {
@@ -12,11 +7,10 @@ namespace ContextRunner.Base
         public static List<ContextSummary> Summarize(IActionContext context)
         {
             var checkpoints = context.GetCheckpoints();
-            var summaries = checkpoints;
-            
-            summaries.Add(CreateFromContext(context));
 
-            return summaries;
+            checkpoints.Add(CreateFromContext(context));
+
+            return checkpoints;
         }
 
         public static ContextSummary CreateFromContext(IActionContext context)
@@ -28,7 +22,7 @@ namespace ContextRunner.Base
                 {
                     var keys = p.Split(':', StringSplitOptions.RemoveEmptyEntries);
 
-                    object lookup = null;
+                    object? lookup = null;
 
                     for (var x = 0; x < keys.Length; x++)
                     {
@@ -42,13 +36,11 @@ namespace ContextRunner.Base
                         }
                         else if (lookup is IDictionary<string, object> dict)
                         {
-                            lookup = dict.ContainsKey(keys[x])
-                                ? dict[keys[x]]
-                                : null;
+                            lookup = dict.TryGetValue(keys[x], out var value) ? value : null;
                         }
                         else
                         {
-                            lookup = lookup?.GetType()?.GetProperty(keys[x]);
+                            lookup = lookup.GetType().GetProperty(keys[x]);
                         }
                     }
 
@@ -59,10 +51,10 @@ namespace ContextRunner.Base
                     return result;
                 });
 
-            var data = new Dictionary<string, object>();
+            var data = new Dictionary<string, object?>();
 
             var sanitizedParams = context.State.Params
-                .Select(p => new KeyValuePair<string, object>($"{p.Key.Substring(0, 1).ToLower()}{p.Key.Substring(1)}", p.Value))
+                .Select(p => new KeyValuePair<string, object?>($"{p.Key[..1].ToLower()}{p.Key[1..]}", p.Value))
                 .Where(p => p.Value != null)
                 .ToList();
             
@@ -88,12 +80,12 @@ namespace ContextRunner.Base
             );
         }
 
-        protected ContextSummary(
+        public ContextSummary(
             DateTime timestamp,
             LogLevel level,
             string message,
             List<ContextLogEntry> entries,
-            Dictionary<string, object> data)
+            Dictionary<string, object?> data)
         {
             Timestamp = timestamp;
             Level = level;
@@ -106,6 +98,6 @@ namespace ContextRunner.Base
         public string Message { get; }
         
         public List<ContextLogEntry> Entries { get; }
-        public Dictionary<string, object> Data { get; }
+        public Dictionary<string, object?> Data { get; }
     }
 }

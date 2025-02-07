@@ -1,60 +1,33 @@
-﻿using System;
-using ContextRunner.Base;
-using NLog;
+﻿using NLog;
 
 namespace ContextRunner.NLog
 {
     public class NlogContextRunnerConfig
     {
-        public NlogContextRunnerConfig()
-        {
-            ContextLogNamePrefix = "context_";
-            EntryLogNamePrefix = "entry_";
+        public bool EnableContextStartMessage { get; init; }
+        public bool EnableContextEndMessage { get; init; } = true;
 
-            EnableContextStartMessage = false;
-            SuppressChildContextStartMessages = false;
-            ContextStartMessageLevel = LogLevel.Trace;
+        public bool SuppressChildContextStartMessages { get; init; }
+        public bool SuppressChildContextEndMessages { get; init; }
 
-            EnableContextEndMessage = true;
-            SuppressChildContextEndMessages = false;
-            ContextEndMessageLevel = LogLevel.Trace;
+        public bool AlwaysShowContextEndMessagesOnError { get; init; } = true;
+        public bool AlwaysShowContextStartMessagesOnError { get; init; }
 
-            AlwaysShowContextEndMessagesOnError = true;
+        public LogLevel ContextStartMessageLevel { get; init; } = LogLevel.Trace;
+        public LogLevel ContextEndMessageLevel { get; init; } = LogLevel.Trace;
 
-            ContextErrorMessageLevel = LogLevel.Error;
+        public LogLevel ContextErrorMessageLevel { get; init; } = LogLevel.Error;
 
-            SuppressContextByNameList = new string[0];
-            SuppressContextsByNameUnderLevel = LogLevel.Warn;
+        public string[] SuppressContextByNameList { get; init; } = [];
+        public LogLevel SuppressContextsByNameUnderLevel { get; init; } = LogLevel.Warn;
 
-            MaxSanitizerDepth = 10;
-            
-            PropertiesToAddToSummaryList = new string[0];
-        }
+        public string ContextLogNamePrefix { get; init; } = "context_";
+        public string EntryLogNamePrefix { get; init; } = "entry_";
+        public string[]? SanitizedProperties { get; init; }
+        public int MaxSanitizerDepth { get; init; } = 10;
 
-        public bool EnableContextStartMessage { get; set; }
-        public bool EnableContextEndMessage { get; set; }
-
-        public bool SuppressChildContextStartMessages { get; set; }
-        public bool SuppressChildContextEndMessages { get; set; }
-
-        public bool AlwaysShowContextEndMessagesOnError { get; set; }
-        public bool AlwaysShowContextStartMessagesOnError { get; set; }
-
-        public LogLevel ContextStartMessageLevel { get; set; }
-        public LogLevel ContextEndMessageLevel { get; set; }
-
-        public LogLevel ContextErrorMessageLevel { get; set; }
-
-        public string[] SuppressContextByNameList { get; set; }
-        public LogLevel SuppressContextsByNameUnderLevel { get; set; }
-
-        public string ContextLogNamePrefix { get; set; }
-        public string EntryLogNamePrefix { get; set; }
-        public string[] SanitizedProperties { get; set; }
-        public int MaxSanitizerDepth { get; set; }
+        public string? MemoryTargetLogName { get; init; }
         
-        public string MemoryTargetLogName { get; set; }
-        
-        public string[] PropertiesToAddToSummaryList { get; set; }
+        public string[] PropertiesToAddToSummaryList { get; init; } = [];
     }
 }

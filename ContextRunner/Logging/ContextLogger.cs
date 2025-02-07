@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Reactive.Subjects;
-using Microsoft.Extensions.Logging;
+﻿using System.Reactive.Subjects;
 using ContextRunner.Base;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace ContextRunner.Logging
 {
@@ -13,7 +8,7 @@ namespace ContextRunner.Logging
         private IActionContext _context;
         private readonly Subject<ContextLogEntry> _logSubject;
 
-        private IContextInfo ContextInfo => _context?.Info;
+        private IContextInfo ContextInfo => _context.Info;
 
         public ContextLogger(IActionContext context)
         {
@@ -25,14 +20,11 @@ namespace ContextRunner.Logging
 
         public ConcurrentQueue<ContextLogEntry> LogEntries { get; }
 
-        public Exception ErrorToEmit { get; set; }
+        public Exception? ErrorToEmit { get; set; }
 
-        public IObservable<ContextLogEntry> WhenEntryLogged
-        {
-            get => _logSubject;
-        }
+        public IObservable<ContextLogEntry> WhenEntryLogged => _logSubject;
 
-        public bool TrySetContext(IActionContext context)
+        public bool TrySetContext(IActionContext? context)
         {
             if(context == null)
             {
@@ -67,7 +59,10 @@ namespace ContextRunner.Logging
         {
             RemoveErrorOnlyEntries(true);
 
-            _logSubject.OnError(ErrorToEmit);
+            if (ErrorToEmit != null)
+            {
+                _logSubject.OnError(ErrorToEmit);
+            }
         }
 
         private void RemoveErrorOnlyEntries(bool isError)
@@ -196,11 +191,11 @@ namespace ContextRunner.Logging
                 LogLevel.None
             };
 
-            IEnumerable<ContextLogEntry> highest = null;
+            IEnumerable<ContextLogEntry>? highest = null;
 
             foreach (var level in search)
             {
-                highest = LogEntries.Where(entry => entry.LogLevel == level);
+                highest = LogEntries.Where(entry => entry.LogLevel == level).ToList();
 
                 if (highest.Any())
                 {
@@ -208,7 +203,7 @@ namespace ContextRunner.Logging
                 }
             }
 
-            var highestLevel = highest.FirstOrDefault()?.LogLevel ?? LogLevel.Trace;
+            var highestLevel = highest?.FirstOrDefault()?.LogLevel ?? LogLevel.Trace;
 
             return highestLevel;
         }

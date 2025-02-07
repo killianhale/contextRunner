@@ -1,12 +1,10 @@
-using System;
-
 namespace ContextRunner.Base
 {
     public interface IRootContextInfo
     {
         string ContextName { get; }
         string ContextGroupName { get; }
-        public string Checkpoint { get; set; }
+        public string? Checkpoint { get; set; }
         Guid Id { get; }
     }
     

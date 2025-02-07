@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using ContextRunner.Logging;
 using ContextRunner.State;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace ContextRunner.Base
 {
@@ -15,49 +10,47 @@ namespace ContextRunner.Base
 
     public class ActionContext : IActionContext
     {
-        private static readonly AsyncLocal<ConcurrentDictionary<string, ActionContextStack>> _asyncLocalStacks =
-            new AsyncLocal<ConcurrentDictionary<string, ActionContextStack>>();
+        private static readonly AsyncLocal<ConcurrentDictionary<string, ActionContextStack>?> AsyncLocalStacks = new ();
 
-        public static event ContextLoadedHandler Loaded;
-        public static event ContextUnloadedHandler Unloaded;
+        public static event ContextLoadedHandler? Loaded;
+        public static event ContextUnloadedHandler? Unloaded;
 
         private readonly Stopwatch _stopwatch;
-        private readonly IActionContext _parent;
-        private readonly IList<ISanitizer> _logSanitizers;
+        private readonly IActionContext? _parent;
 
         private readonly ConcurrentDictionary<string, ActionContextStack> _namedStacks;
         private readonly ActionContextStack _stack;
 
 
         public ActionContext(
-            [CallerMemberName] string name = null,
-            ActionContextSettings settings = null,
-            IEnumerable<ISanitizer> logSanitizers = null)
+            [CallerMemberName] string? name = null,
+            ActionContextSettings? settings = null,
+            IEnumerable<ISanitizer>?logSanitizers = null)
             : this("default", name, settings, logSanitizers)
         {
         }
 
         public ActionContext(
             string contextGroupName = "default",
-            [CallerMemberName] string name = null,
-            ActionContextSettings settings = null,
-            IEnumerable<ISanitizer> logSanitizers = null)
+            [CallerMemberName] string? name = null,
+            ActionContextSettings? settings = null,
+            IEnumerable<ISanitizer>? logSanitizers = null)
         {
-            _logSanitizers = logSanitizers?.ToList();
+            logSanitizers = logSanitizers?.ToList() ?? [];
             
             _stopwatch = new Stopwatch();
             _stopwatch.Start();
 
-            _asyncLocalStacks.Value ??= new ConcurrentDictionary<string, ActionContextStack>();
-            _namedStacks = _asyncLocalStacks.Value;
+            AsyncLocalStacks.Value ??= new ConcurrentDictionary<string, ActionContextStack>();
+            _namedStacks = AsyncLocalStacks.Value;
             _stack = _namedStacks.GetOrAdd(contextGroupName, new ActionContextStack());
 
             _parent = _stack.Peek();
             _stack.Push(this);
 
             var id = Guid.NewGuid();
-            var causationId = _parent?.Info.Id ?? id;
-            var correlationId = _stack.CorrelationId;
+            // var causationId = _parent?.Info.Id ?? id;
+            // var correlationId = _stack.CorrelationId;
 
             if (_parent == null)
             {
@@ -66,11 +59,11 @@ namespace ContextRunner.Base
                 Info = new ContextInfo(
                     true,
                     0,
-                    name,
+                    name ?? $"Context_{id}",
                     contextGroupName,
                     _stack.CorrelationId);
                 
-                State = new ContextState(_logSanitizers);
+                State = new ContextState(logSanitizers);
                 Logger = new ContextLogger(this);
             }
             else
@@ -80,10 +73,10 @@ namespace ContextRunner.Base
                 Info = new ContextInfo(
                     false,
                     _parent.Info.Depth + 1,
-                    name,
+                    name ?? $"Context_{id}",
                     contextGroupName,
                     _stack.CorrelationId,
-                    _parent?.Info?.Id);
+                    _parent.Info.Id);
                 
                 State = _parent.State;
                 Logger = _parent.Logger;
@@ -99,12 +92,12 @@ namespace ContextRunner.Base
         }
 
         public ActionContextSettings Settings { get; }
-        public IContextLogger Logger { get; private set; }
-        public IContextState State { get; private set; }
-
-        public Action<IActionContext> OnDispose { get; set; }
+        public IContextLogger Logger { get; }
+        public IContextState State { get; }
 
         public IContextInfo Info { get; }
+
+        public Action<IActionContext>? OnDispose { get; set; }
 
         public TimeSpan TimeElapsed => _stopwatch.Elapsed;
 
@@ -144,7 +137,11 @@ namespace ContextRunner.Base
             _stack.Pop();
 
             Logger.CompleteIfRoot();
-            Logger.TrySetContext(_parent);
+
+            if (_parent != null)
+            {
+                Logger.TrySetContext(_parent);
+            }
 
             if (_stack.IsEmpty)
             {
@@ -153,12 +150,13 @@ namespace ContextRunner.Base
 
                 _namedStacks.Remove(Info.ContextGroupName, out _);
 
-                if (!_namedStacks.Any())
+                if (_namedStacks.IsEmpty)
                 {
-                    _asyncLocalStacks.Value = null;
+                    AsyncLocalStacks.Value = null;
                 }
             }
 
+            GC.SuppressFinalize(this);
             OnDispose?.Invoke(this);
             Unloaded?.Invoke(this);
         }

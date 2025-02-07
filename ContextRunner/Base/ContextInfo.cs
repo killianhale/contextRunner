@@ -1,14 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using System.Threading;
-using ContextRunner.Logging;
-using ContextRunner.State;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace ContextRunner.Base
+﻿namespace ContextRunner.Base
 {
     public class ContextInfo : IContextInfo
     {
@@ -36,7 +26,7 @@ namespace ContextRunner.Base
         
         public string ContextName { get; }
         public string ContextGroupName { get; }
-        public string Checkpoint { get; set; }
+        public string? Checkpoint { get; set; }
 
         public Guid Id { get; }
         public Guid CorrelationId { get; }

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
+﻿using System.Runtime.CompilerServices;
 using ContextRunner.Base;
 using ContextRunner.State;
 using Newtonsoft.Json;
@@ -19,28 +15,28 @@ namespace ContextRunner
         }
 
         public static void Configure(
-            Action<IActionContext> onStart = null,
-            ActionContextSettings settings = null,
-            IEnumerable<ISanitizer> sanitizers = null)
+            Action<IActionContext>? onStart = null,
+            ActionContextSettings? settings = null,
+            IEnumerable<ISanitizer>? sanitizers = null)
         {
             Runner = new ActionContextRunner(onStart, settings, sanitizers);
         }
 
-        protected Action<IActionContext> OnStart { get; set; }
-        protected Action<IActionContext> OnEnd{ get; set; }
-        protected ActionContextSettings Settings { get; set; }
-        protected IEnumerable<ISanitizer> Sanitizers { get; set; }
+        protected Action<IActionContext>? OnStart { get; init; }
+        protected Action<IActionContext>? OnEnd{ get; init; }
+        protected ActionContextSettings Settings { get; init; }
+        protected IEnumerable<ISanitizer> Sanitizers { get; init; }
         
-        private IDisposable _logHandle;
+        private IDisposable? _logHandle;
 
         public ActionContextRunner(
-            Action<IActionContext> onStart = null,
-            ActionContextSettings settings = null,
-            IEnumerable<ISanitizer> sanitizers = null)
+            Action<IActionContext>? onStart = null,
+            ActionContextSettings? settings = null,
+            IEnumerable<ISanitizer>? sanitizers = null)
         {
             OnStart = onStart ?? Setup;
             Settings = settings ?? new ActionContextSettings();
-            Sanitizers = sanitizers ?? new ISanitizer[0];
+            Sanitizers = sanitizers ?? Array.Empty<ISanitizer>();
         }
         
         #region Base implementation stuff...
@@ -72,11 +68,13 @@ namespace ContextRunner
         public virtual void Dispose()
         {
             _logHandle?.Dispose();
+            
+            GC.SuppressFinalize(this);
         }
         
         #endregion
 
-        public IActionContext Create([CallerMemberName] string name = null,
+        public IActionContext Create([CallerMemberName] string? name = null,
             string contextGroupName = "default")
         {
             var context =  new ActionContext(contextGroupName, name, Settings, Sanitizers);
@@ -96,7 +94,7 @@ namespace ContextRunner
         }
 
         [Obsolete("Please use CreateAndWrapActionExceptions as its use is clearer.", false)]
-        public void RunAction(Action<IActionContext> action, [CallerMemberName] string name = null,
+        public void RunAction(Action<IActionContext> action, [CallerMemberName] string? name = null,
             string contextGroupName = "default")
         {
             CreateAndAppendToActionExceptions(action, name, contextGroupName);
@@ -104,38 +102,38 @@ namespace ContextRunner
 
 
         [Obsolete("Please use CreateAndWrapActionExceptions as its use is clearer.", false)]
-        public T RunAction<T>(Func<IActionContext, T> action, [CallerMemberName] string name = null,
+        public T RunAction<T>(Func<IActionContext, T> action, [CallerMemberName] string? name = null,
             string contextGroupName = "default")
         {
             return CreateAndAppendToActionExceptions(action, name, contextGroupName);
         }
 
         [Obsolete("Please use CreateAndAppendToActionExceptions as its use is clearer.", false)]
-        public async Task RunActionAsync(Func<IActionContext, Task> action, [CallerMemberName] string name = null,
+        public async Task RunActionAsync(Func<IActionContext, Task> action, [CallerMemberName] string? name = null,
             string contextGroupName = "default")
         {
             await CreateAndAppendToActionExceptionsAsync(action, name, contextGroupName);
         }
 
         [Obsolete("Please use CreateAndAppendToActionExceptions as its use is clearer.", false)]
-        public async Task<T> RunActionAsync<T>(Func<IActionContext, Task<T>> action, [CallerMemberName] string name = null,
+        public async Task<T> RunActionAsync<T>(Func<IActionContext, Task<T>> action, [CallerMemberName] string? name = null,
             string contextGroupName = "default")
         {
             return await CreateAndAppendToActionExceptionsAsync(action, name, contextGroupName);
         }
 
         public void CreateAndAppendToActionExceptions(Action<IActionContext> action,
-            [CallerMemberName] string name = null, string contextGroupName = "default")
+            [CallerMemberName] string? name = null, string contextGroupName = "default")
         {
             CreateAndAppendToActionExceptions(action, HandleError, name, contextGroupName);
         }
         
-        public void CreateAndAppendToActionExceptions(Action<IActionContext> action, Func<Exception, IActionContext, Exception> errorHandlingOverride, [CallerMemberName]string name = null, string contextGroupName = "default")
+        public void CreateAndAppendToActionExceptions(Action<IActionContext>? action, Func<Exception, IActionContext, Exception>? errorHandlingOverride, [CallerMemberName]string? name = null, string contextGroupName = "default")
         {
             if (action == null) return;
 
             using var context = new ActionContext(contextGroupName, name, Settings, Sanitizers);
-            context.State.SetParam("RunnerType", this.GetType().Name);
+            context.State.SetParam("RunnerType", GetType().Name);
             
             try
             {
@@ -155,18 +153,16 @@ namespace ContextRunner
             }
         }
 
-        public T CreateAndAppendToActionExceptions<T>(Func<IActionContext, T> action, [CallerMemberName] string name = null,
+        public T CreateAndAppendToActionExceptions<T>(Func<IActionContext, T> action, [CallerMemberName] string? name = null,
             string contextGroupName = "default")
         {
             return CreateAndAppendToActionExceptions(action, HandleError, name, contextGroupName);
         }
         
-        public T CreateAndAppendToActionExceptions<T>(Func<IActionContext, T> action, Func<Exception, IActionContext, Exception> errorHandlingOverride, [CallerMemberName]string name = null, string contextGroupName = "default")
+        public T CreateAndAppendToActionExceptions<T>(Func<IActionContext, T> action, Func<Exception, IActionContext, Exception>? errorHandlingOverride, [CallerMemberName]string? name = null, string contextGroupName = "default")
         {
-            if (action == null) return default;
-
             using var context = new ActionContext(contextGroupName, name, Settings, Sanitizers);
-            context.State.SetParam("RunnerType", this.GetType().Name);
+            context.State.SetParam("RunnerType", GetType().Name);
             
             try
             {
@@ -188,18 +184,18 @@ namespace ContextRunner
             }
         }
 
-        public async Task CreateAndAppendToActionExceptionsAsync(Func<IActionContext, Task> action, [CallerMemberName] string name = null,
+        public async Task CreateAndAppendToActionExceptionsAsync(Func<IActionContext, Task> action, [CallerMemberName] string? name = null,
             string contextGroupName = "default")
         {
             await CreateAndAppendToActionExceptionsAsync(action, HandleError, name, contextGroupName);
         }
 
-        public async Task CreateAndAppendToActionExceptionsAsync(Func<IActionContext, Task> action, Func<Exception, IActionContext, Exception> errorHandlingOverride, [CallerMemberName]string name = null, string contextGroupName = "default")
+        public async Task CreateAndAppendToActionExceptionsAsync(Func<IActionContext, Task>? action, Func<Exception, IActionContext, Exception>? errorHandlingOverride, [CallerMemberName]string? name = null, string contextGroupName = "default")
         {
             if (action == null) return;
 
             using var context = new ActionContext(contextGroupName, name, Settings, Sanitizers);
-            context.State.SetParam("RunnerType", this.GetType().Name);
+            context.State.SetParam("RunnerType", GetType().Name);
             
             try
             {
@@ -219,18 +215,16 @@ namespace ContextRunner
             }
         }
 
-        public async Task<T> CreateAndAppendToActionExceptionsAsync<T>(Func<IActionContext, Task<T>> action, [CallerMemberName] string name = null,
+        public async Task<T> CreateAndAppendToActionExceptionsAsync<T>(Func<IActionContext, Task<T>> action, [CallerMemberName] string? name = null,
             string contextGroupName = "default")
         {
             return await CreateAndAppendToActionExceptionsAsync(action, HandleError, name, contextGroupName);
         }
 
-        public async Task<T> CreateAndAppendToActionExceptionsAsync<T>(Func<IActionContext, Task<T>> action, Func<Exception, IActionContext, Exception> errorHandlingOverride, [CallerMemberName]string name = null, string contextGroupName = "default")
+        public async Task<T> CreateAndAppendToActionExceptionsAsync<T>(Func<IActionContext, Task<T>> action, Func<Exception, IActionContext, Exception>? errorHandlingOverride, [CallerMemberName]string? name = null, string contextGroupName = "default")
         {
-            if (action == null) return default;
-            
             using var context = new ActionContext(contextGroupName, name, Settings, Sanitizers);
-            context.State.SetParam("RunnerType", this.GetType().Name);
+            context.State.SetParam("RunnerType", GetType().Name);
             
             try
             {
@@ -254,9 +248,9 @@ namespace ContextRunner
 
         private Exception HandleError(Exception ex, IActionContext context)
         {
-            var wasHandled = ex?.Data.Contains("ContextExceptionHandled");
+            var wasHandled = ex.Data.Contains("ContextExceptionHandled");
 
-            if (ex == null || wasHandled == true) return ex;
+            if (wasHandled) return ex;
             
             context.State.SetParam("Exception", ex);
 

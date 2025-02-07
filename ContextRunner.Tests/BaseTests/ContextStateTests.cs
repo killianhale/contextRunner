@@ -1,8 +1,5 @@
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using ContextRunner.Base;
 using ContextRunner.State.Sanitizers;
-using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace ContextRunner.Tests.BaseTests
@@ -45,11 +42,11 @@ namespace ContextRunner.Tests.BaseTests
                 }
             };
 
-            var sanitizer = new KeyBasedSanitizer(new[] { "sanitizeMe" }, 2);
+            var sanitizer = new KeyBasedSanitizer(["sanitizeMe"], 2);
             
-            var result = sanitizer.Sanitize(new KeyValuePair<string, object>("test", testObject));
+            var result = sanitizer.Sanitize(new KeyValuePair<string, object?>("test", testObject));
 
-            Assert.Equal("~truncated~", result.Level1.Level2);
+            Assert.Equal("~truncated~", result?.Level1.Level2);
         }
     }
 }

@@ -20,14 +20,14 @@ namespace ContextRunner.NLog.Internal
         List<ContextLogEntry> GetMemoryLogsSince(DateTime timestamp);
     }
 
-    internal class MemoryLogService : IMemoryLogService
+    internal class MemoryLogService : IMemoryLogService, IDisposable
     {
-        private static readonly ConcurrentQueue<(DateTime Timestamp, ContextLogEntry LogEntry)> OutOfContextLogs = new ConcurrentQueue<(DateTime, ContextLogEntry)>();
-        private static readonly ConcurrentDictionary<Guid, DateTime> ContextStartTimestamps = new ConcurrentDictionary<Guid, DateTime>();
+        private static readonly ConcurrentQueue<(DateTime Timestamp, ContextLogEntry LogEntry)> OutOfContextLogs = new ();
+        private static readonly ConcurrentDictionary<Guid, DateTime> ContextStartTimestamps = new ();
 
         private readonly NlogContextRunnerConfig _config;
-        private MemoryTarget _memoryLogTarget;
-        private Timer _logCleanupTimer;
+        private MemoryTarget? _memoryLogTarget;
+        private Timer? _logCleanupTimer;
 
         public MemoryLogService(NlogContextRunnerConfig config)
         {
@@ -38,10 +38,10 @@ namespace ContextRunner.NLog.Internal
 
         private void Setup()
         {
-            if (string.IsNullOrEmpty(_config?.MemoryTargetLogName)) return;
+            if (string.IsNullOrEmpty(_config.MemoryTargetLogName)) return;
             _memoryLogTarget = LogManager.Configuration.FindTargetByName(_config.MemoryTargetLogName) as MemoryTarget;
             
-            _logCleanupTimer = new Timer(state => {
+            _logCleanupTimer = new Timer(_ => {
                 if (ContextStartTimestamps.Keys.Count == 0)
                 {
                     _memoryLogTarget?.Logs?.Clear();
@@ -85,7 +85,7 @@ namespace ContextRunner.NLog.Internal
         {
             var timestamps = ContextStartTimestamps.Values.ToList();
 
-            if (!timestamps.Any()) return;
+            if (timestamps.Count == 0) return;
             
             var minTimestamp = timestamps.Min();
 
@@ -105,6 +105,14 @@ namespace ContextRunner.NLog.Internal
                 .ToList();
 
             return logs;
+        }
+
+        public void Dispose()
+        {
+            _memoryLogTarget?.Dispose();
+            _logCleanupTimer?.Dispose();
+            
+            GC.SuppressFinalize(this);
         }
     }
 }

@@ -1,14 +1,11 @@
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using ContextRunner.Base;
 using ContextRunner.Logging;
 using Microsoft.Extensions.Logging;
-using Moq;
 using Xunit;
+
+// ReSharper disable ExplicitCallerInfoArgument
 
 namespace ContextRunner.Tests.BaseTests
 {
@@ -32,9 +29,10 @@ namespace ContextRunner.Tests.BaseTests
             var logger = new ContextLogger(context);
             logger.Log(level, message);
 
-            var entry = logger.LogEntries?.FirstOrDefault();
+            var entry = logger.LogEntries.FirstOrDefault();
             
             Assert.NotNull(entry);
+            Assert.NotNull(logger.LogEntries);
             Assert.Single(logger.LogEntries);
             Assert.Equal(level, entry.LogLevel);
             Assert.Equal(message, entry.Message);
@@ -54,9 +52,10 @@ namespace ContextRunner.Tests.BaseTests
             var logger = new ContextLogger(context);
             logger.Trace(message);
 
-            var entry = logger.LogEntries?.FirstOrDefault();
+            var entry = logger.LogEntries.FirstOrDefault();
             
             Assert.NotNull(entry);
+            Assert.NotNull(logger.LogEntries);
             Assert.Single(logger.LogEntries);
             Assert.Equal(LogLevel.Trace, entry.LogLevel);
             Assert.Equal(message, entry.Message);
@@ -76,9 +75,10 @@ namespace ContextRunner.Tests.BaseTests
             var logger = new ContextLogger(context);
             logger.Debug(message);
 
-            var entry = logger.LogEntries?.FirstOrDefault();
+            var entry = logger.LogEntries.FirstOrDefault();
             
             Assert.NotNull(entry);
+            Assert.NotNull(logger.LogEntries);
             Assert.Single(logger.LogEntries);
             Assert.Equal(LogLevel.Debug, entry.LogLevel);
             Assert.Equal(message, entry.Message);
@@ -98,9 +98,10 @@ namespace ContextRunner.Tests.BaseTests
             var logger = new ContextLogger(context);
             logger.Information(message);
 
-            var entry = logger.LogEntries?.FirstOrDefault();
+            var entry = logger.LogEntries.FirstOrDefault();
             
             Assert.NotNull(entry);
+            Assert.NotNull(logger.LogEntries);
             Assert.Single(logger.LogEntries);
             Assert.Equal(LogLevel.Information, entry.LogLevel);
             Assert.Equal(message, entry.Message);
@@ -123,6 +124,7 @@ namespace ContextRunner.Tests.BaseTests
             var entry = logger.LogEntries?.FirstOrDefault();
             
             Assert.NotNull(entry);
+            Assert.NotNull(logger.LogEntries);
             Assert.Single(logger.LogEntries);
             Assert.Equal(LogLevel.Warning, entry.LogLevel);
             Assert.Equal(message, entry.Message);
@@ -145,6 +147,7 @@ namespace ContextRunner.Tests.BaseTests
             var entry = logger.LogEntries?.FirstOrDefault();
             
             Assert.NotNull(entry);
+            Assert.NotNull(logger.LogEntries);
             Assert.Single(logger.LogEntries);
             Assert.Equal(LogLevel.Error, entry.LogLevel);
             Assert.Equal(message, entry.Message);
@@ -167,6 +170,7 @@ namespace ContextRunner.Tests.BaseTests
             var entry = logger.LogEntries?.FirstOrDefault();
             
             Assert.NotNull(entry);
+            Assert.NotNull(logger.LogEntries);
             Assert.Single(logger.LogEntries);
             Assert.Equal(LogLevel.Critical, entry.LogLevel);
             Assert.Equal(message, entry.Message);

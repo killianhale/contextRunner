@@ -1,14 +1,11 @@
-using System;
-using System.Collections.Concurrent;
 using ContextRunner.Base;
-using Microsoft.Extensions.Logging;
 
 namespace ContextRunner.Logging
 {
     public interface IContextLogger
     {
         ConcurrentQueue<ContextLogEntry> LogEntries { get; }
-        Exception ErrorToEmit { get; set; }
+        Exception? ErrorToEmit { get; set; }
         IObservable<ContextLogEntry> WhenEntryLogged { get; }
         bool TrySetContext(IActionContext context);
         void CompleteIfRoot();

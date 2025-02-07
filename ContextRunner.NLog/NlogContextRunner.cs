@@ -1,53 +1,53 @@
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using NLog;
 using Microsoft.Extensions.Options;
-using MsLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using ContextRunner.Logging;
-using ContextRunner.State;
 using ContextRunner.State.Sanitizers;
 using ContextRunner.Base;
 using ContextRunner.NLog.Internal;
-using NLog.Config;
-using NLog.Targets;
 
 namespace ContextRunner.NLog
 {
-    public class NlogContextRunner : ActionContextRunner, IDisposable
+    public class NlogContextRunner : ActionContextRunner
     {
         public static void Configure(NlogContextRunnerConfig config)
         {
             Runner = new NlogContextRunner(config);
         }
         
-        private readonly NlogContextRunnerConfig _config;
-        private readonly IMemoryLogService _memoryLogService;
-        private IDisposable _logHandle;
+        private readonly NlogContextRunnerConfig _config = new ();
+        private readonly MemoryLogService _memoryLogService;
+        private IDisposable? _logHandle;
 
         public NlogContextRunner(IOptionsMonitor<NlogContextRunnerConfig> options) : this(options.CurrentValue)
         {
         }
 
-        public NlogContextRunner(NlogContextRunnerConfig config)
+        // ReSharper disable once MemberCanBePrivate.Global
+        public NlogContextRunner(NlogContextRunnerConfig? config)
         {
-            _config = config;
-            _memoryLogService = new MemoryLogService(config);
+            if (config != null)
+            {
+                _config = config;
+            }
+            
+            _memoryLogService = new MemoryLogService(_config);
 
             var maxDepth = config?.MaxSanitizerDepth ?? 10;
 
             OnStart = Setup;
             OnEnd = Teardown;
             Settings = GetActionContextSettings();
-            Sanitizers = _config?.SanitizedProperties != null && _config.SanitizedProperties.Length > 0
+            Sanitizers = _config.SanitizedProperties is { Length: > 0 }
                 ? new[] { new KeyBasedSanitizer(_config.SanitizedProperties, maxDepth) }
-                : new[] { new KeyBasedSanitizer(new string[0]) };
+                : new[] { new KeyBasedSanitizer(Array.Empty<string>()) };
         }
 
         private ActionContextSettings GetActionContextSettings()
         {
+            // _config ??= new NlogContextRunnerConfig();
+            
             return new ActionContextSettings
             {
                 EnableContextEndMessage = _config.EnableContextEndMessage,
@@ -75,7 +75,7 @@ namespace ContextRunner.NLog
                 () => LogContext(context));
         }
 
-        private void Teardown(IActionContext context)
+        private void Teardown(IActionContext? context)
         {
             LogManager.Flush();
             
@@ -86,7 +86,7 @@ namespace ContextRunner.NLog
         {
             _memoryLogService.GetPendingMemoryLogs();
             
-            var prefix = _config.EntryLogNamePrefix ?? "entry_";
+            var prefix = _config.EntryLogNamePrefix;
             var logger = LogManager.GetLogger(prefix + entry.ContextName);
 
             var level = NlogLogLevelUtil.ConvertFromMsLogLevel(entry.LogLevel);
@@ -101,6 +101,8 @@ namespace ContextRunner.NLog
 
         private void LogContextWithError(IActionContext context, Exception ex)
         {
+            context.State.SetParam("Exception", ex);
+            
             LogContext(context);
         }
 
@@ -120,7 +122,7 @@ namespace ContextRunner.NLog
                 return;
             }
 
-            var prefix = _config.ContextLogNamePrefix ?? "context_";
+            var prefix = _config.ContextLogNamePrefix;
             
             var summaries = ContextSummary.Summarize(context);
             
@@ -176,11 +178,11 @@ namespace ContextRunner.NLog
                 .OrderBy(e => e.Timestamp)
                 .Select(e => new
                 {
-                    Timestamp = e.Timestamp,
+                    e.Timestamp,
                     Level = NlogLogLevelUtil.ConvertFromMsLogLevel(e.LogLevel).ToString(),
-                    Message = e.Message,
-                    ContextName = e.ContextName,
-                    ContextId = e.ContextId,
+                    e.Message,
+                    e.ContextName,
+                    e.ContextId,
                     e.TimeElapsed
                 });
 
@@ -196,6 +198,8 @@ namespace ContextRunner.NLog
             _logHandle?.Dispose();
             
             base.Dispose();
+            
+            GC.SuppressFinalize(this);
         }
     }
 }

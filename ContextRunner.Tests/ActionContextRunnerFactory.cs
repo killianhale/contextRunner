@@ -11,27 +11,27 @@ namespace ContextRunner.Tests
         private readonly ActionContextSettings _settings;
         private readonly ISanitizer[] _sanitizers;
 
-        public ActionContextRunnerFactory(ActionContextSettings settings = null, ISanitizer[] sanitizers = null)
+        public ActionContextRunnerFactory(ActionContextSettings? settings = null, ISanitizer[]? sanitizers = null)
         {
             _settings = settings ?? new ActionContextSettings()
             {
                 EnableContextEndMessage = false
             };
-            _sanitizers = sanitizers ?? new ISanitizer[0];
+            _sanitizers = sanitizers ?? [];
         }
 
-        public IActionContext Create(Action<IContextRunner> test)
+        public IActionContext? Create(Action<IContextRunner> test)
         {
             var resetEvent = new AutoResetEvent(false);
             
-            IDisposable logHandle = null;
-            IActionContext completedContext = null;
+            IDisposable? logHandle = null;
+            IActionContext? completedContext = null;
 
             var contextRunner = new ActionContextRunner(c =>
                 {
                     logHandle = c.Logger.WhenEntryLogged.Subscribe(
-                        entry => { },
-                        error =>
+                        _ => { },
+                        _ =>
                         {
                             completedContext = c;
 
@@ -56,19 +56,18 @@ namespace ContextRunner.Tests
             return completedContext;
         }
         
-        public (IActionContext, T) Create<T>(Func<IContextRunner, T> test)
-            where T : class
+        public (IActionContext?, T) Create<T>(Func<IContextRunner, T> test)
         {
             var resetEvent = new AutoResetEvent(false);
             
-            IDisposable logHandle = null;
-            IActionContext completedContext = null;
+            IDisposable? logHandle = null;
+            IActionContext? completedContext = null;
 
             var contextRunner = new ActionContextRunner(c =>
                 {
                     logHandle = c.Logger.WhenEntryLogged.Subscribe(
-                        entry => { },
-                        error => {
+                        _ => { },
+                        _ => {
                             completedContext = c;
 
                             resetEvent.Set();
@@ -92,18 +91,18 @@ namespace ContextRunner.Tests
             return (completedContext, result);
         }
         
-        public async Task<IActionContext> CreateAsync(Func<IContextRunner, Task> test)
+        public async Task<IActionContext?> CreateAsync(Func<IContextRunner, Task> test)
         {
             var resetEvent = new AutoResetEvent(false);
             
-            IDisposable logHandle = null;
-            IActionContext completedContext = null;
+            IDisposable? logHandle = null;
+            IActionContext? completedContext = null;
 
             var contextRunner = new ActionContextRunner(c =>
                 {
                     logHandle = c.Logger.WhenEntryLogged.Subscribe(
-                        entry => { },
-                        error =>
+                        _ => { },
+                        _ =>
                         {
                             completedContext = c;
 
@@ -128,19 +127,18 @@ namespace ContextRunner.Tests
             return completedContext;
         }
         
-        public async Task<(IActionContext, T)> CreateAsync<T>(Func<IContextRunner, Task<T>> test)
-            where T : class
+        public async Task<(IActionContext?, T)> CreateAsync<T>(Func<IContextRunner, Task<T>> test)
         {
             var resetEvent = new AutoResetEvent(false);
             
-            IDisposable logHandle = null;
-            IActionContext completedContext = null;
+            IDisposable? logHandle = null;
+            IActionContext? completedContext = null;
 
             var contextRunner = new ActionContextRunner(c =>
                 {
                     logHandle = c.Logger.WhenEntryLogged.Subscribe(
-                        entry => { },
-                        error =>
+                        _ => { },
+                        _ =>
                         {
                             completedContext = c;
 

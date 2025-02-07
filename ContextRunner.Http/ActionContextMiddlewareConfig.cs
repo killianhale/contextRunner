@@ -1,21 +1,13 @@
-﻿using System;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace ContextRunner.Http
 {
     public class ActionContextMiddlewareConfig
     {
-        public ActionContextMiddlewareConfig()
-        {
-            PathPrefixWhitelist = "/api/";
-            HttpErrorCodeMessageLogLevel = LogLevel.Warning;
-            HttpSuccessCodeMessageLogLevel = LogLevel.Information;
-        }
-
-        public string PathPrefixWhitelist { get; set; }
-        public bool PrintLogLineForHttpErrorCodes { get; set; }
-        public LogLevel HttpErrorCodeMessageLogLevel { get; set; }
-        public bool PrintLogLineForHttpSuccessCodes { get; set; }
-        public LogLevel HttpSuccessCodeMessageLogLevel { get; set; }
+        public string PathPrefixWhitelist { get; init; } = "/api/";
+        public bool PrintLogLineForHttpErrorCodes { get; init; }
+        public LogLevel HttpErrorCodeMessageLogLevel { get; init; } = LogLevel.Warning;
+        public bool PrintLogLineForHttpSuccessCodes { get; init; }
+        public LogLevel HttpSuccessCodeMessageLogLevel { get; init; } = LogLevel.Information;
     }
 }

@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using ContextRunner.Samples.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 using NLog;
@@ -10,21 +7,33 @@ using NLog;
 
 namespace ContextRunner.Samples.Web.Controllers
 {
+    /// <summary>
+    /// 
+    /// </summary>
     [ApiController]
     [Route("[controller]")]
     public class SurveyController : ControllerBase
     {
         private readonly IContextRunner _runner;
 
-        public SurveyController(IContextRunner runner = null)
+        /// <summary>
+        /// Constructor for DI
+        /// </summary>
+        /// <param name="runner"></param>
+        public SurveyController(IContextRunner? runner = null)
         {
-            _runner = runner; //?? ActionContextRunner.Runner;
+            _runner = runner ?? ActionContextRunner.Runner;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="survey"></param>
+        /// <returns></returns>
         [HttpPost]
-        public async Task<SurveyRequest> Post(SurveyRequest survey)
+        public SurveyRequest Post(SurveyRequest survey)
         {
-            return await _runner.CreateAndAppendToActionExceptions(async context =>
+            return _runner.CreateAndAppendToActionExceptions(context =>
             {
                 context.Logger.Debug("Simulating saving survey information...");
                 context.State.SetParam("Survey", survey);
@@ -33,14 +42,20 @@ namespace ContextRunner.Samples.Web.Controllers
                 logger.Debug("This is a test");
 
                 return survey;
-            }, "SurveyService");
+            });
         }
         
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="survey"></param>
+        /// <returns></returns>
         [HttpPost]
         [Route("deprecated")]
-        public async Task<SurveyRequest> Post2(SurveyRequest survey)
+        [Obsolete("Obsolete")]
+        public SurveyRequest Post2(SurveyRequest survey)
         {
-            return await _runner.RunAction(async context =>
+            return _runner.RunAction(context =>
             {
                 context.Logger.Debug("Simulating saving survey information...");
                 context.State.SetParam("Survey", survey);
@@ -49,13 +64,18 @@ namespace ContextRunner.Samples.Web.Controllers
                 logger.Debug("This is a test w/ deprecated method");
 
                 return survey;
-            }, "SurveyService");
+            });
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="survey"></param>
+        /// <returns></returns>
         [HttpPut]
-        public async Task<SurveyRequest> Put(SurveyRequest survey)
+        public SurveyRequest Put(SurveyRequest survey)
         {
-            using var context = _runner.Create("SurveyService");
+            using var context = _runner.Create();
 
             context.Logger.Debug("Pretending we're updating the survey information...");
             context.State.SetParam("Survey", survey);
@@ -66,60 +86,74 @@ namespace ContextRunner.Samples.Web.Controllers
             return survey;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="survey"></param>
+        /// <returns></returns>
         [HttpPost]
         [Route("nested")]
-        public async Task<SurveyRequest> PostNested(SurveyRequest survey)
+        public SurveyRequest PostNested(SurveyRequest survey)
         {
-            return await _runner.RunAction(async context =>
+            return _runner.CreateAndAppendToActionExceptions(context =>
             {
                 context.Logger.Debug("Simulating saving survey information...");
                 context.State.SetParam("Survey", survey);
 
-                await _runner.RunAction(async context =>
+                _runner.CreateAndAppendToActionExceptions(context2 =>
                 {
-                    context.Logger.Debug("This is a nested wrapper...");
+                    context2.Logger.Debug("This is a nested wrapper...");
                     for (var x = 0; x < 5; x++)
                     {
-                        await _runner.RunAction(async context =>
+                        var x1 = x;
+                        
+                        _runner.CreateAndAppendToActionExceptions(context3 =>
                         {
-                            context.Logger.Debug($"this is service {x} inside of the nested wrapper...");
-                            context.State.SetParam($"Survey{x}", survey);
+                            context3.Logger.Debug($"this is service {x1} inside of the nested wrapper...");
+                            context3.State.SetParam($"Survey{x1}", survey);
 
                             return survey;
                         }, $"NestedService{x}", "nested");
                     }
-                }, $"WrapperService", "nested");
+                }, contextGroupName: "nested");
 
                 return survey;
-            }, "SurveyService");
+            });
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="survey"></param>
+        /// <returns></returns>
         [HttpPost]
         [Route("inverted")]
-        public async Task<SurveyRequest> PostNestedInverted(SurveyRequest survey)
+        public SurveyRequest PostNestedInverted(SurveyRequest survey)
         {
-            return await _runner.RunAction(async context =>
+            return _runner.CreateAndAppendToActionExceptions(context =>
             {
                 context.Logger.Debug("Simulating saving survey information...");
                 context.State.SetParam("Survey", survey);
 
-                await _runner.RunAction(async context =>
+                _runner.CreateAndAppendToActionExceptions(context2 =>
                 {
-                    context.Logger.Debug("This is a nested wrapper...");
+                    context2.Logger.Debug("This is a nested wrapper...");
                     for (var x = 0; x < 5; x++)
                     {
-                        await _runner.RunAction(async context =>
+                        var x1 = x;
+                        
+                        _runner.CreateAndAppendToActionExceptions(context3 =>
                         {
-                            context.Logger.Debug($"this is service {x} inside of the nested wrapper...");
-                            context.State.SetParam($"Survey{x}", survey);
+                            context3.Logger.Debug($"this is service {x1} inside of the nested wrapper...");
+                            context3.State.SetParam($"Survey{x1}", survey);
 
                             return survey;
                         }, $"NestedService{x}");
                     }
-                }, $"WrapperService");
+                });
 
                 return survey;
-            }, "SurveyService", "nested");
+            }, contextGroupName: "nested");
         }
     }
 }

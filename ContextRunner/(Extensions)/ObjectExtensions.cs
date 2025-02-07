@@ -12,12 +12,13 @@ namespace ContextRunner
             return GetObject(0, maxDepth, obj.GetType(), obj);
         }
         
-        private static dynamic GetObject(int level, int maxDepth, Type type, object obj)
+        private static dynamic GetObject(int level, int maxDepth, Type type, object? obj)
         {
+            if (obj == null) return "null";
             if (level == maxDepth) return "~truncated~";
             
             var expando = new ExpandoObject();
-            var dictionary = (IDictionary<string, object>)expando;
+            ICollection<KeyValuePair<string, object?>> collection = expando;
 
             var props = type.GetProperties()
                 .Where(p => p.GetIndexParameters().Length == 0)
@@ -25,9 +26,14 @@ namespace ContextRunner
 
             foreach (var property in props)
             {
-                var val = GetObject(level + 1, maxDepth, property.PropertyType, property.GetValue(obj));
+                var val = GetObject(
+                    level + 1,
+                    maxDepth,
+                    property.PropertyType,
+                    property.GetValue(obj)
+                );
 
-                dictionary[property.Name] = val;
+                collection.Add(new KeyValuePair<string, object?>(property.Name, val));
             }
 
             return expando;
