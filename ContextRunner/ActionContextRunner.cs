@@ -93,35 +93,6 @@ namespace ContextRunner
             return context;
         }
 
-        [Obsolete("Please use CreateAndWrapActionExceptions as its use is clearer.", false)]
-        public void RunAction(Action<IActionContext> action, [CallerMemberName] string? name = null,
-            string contextGroupName = "default")
-        {
-            CreateAndAppendToActionExceptions(action, name, contextGroupName);
-        }
-
-
-        [Obsolete("Please use CreateAndWrapActionExceptions as its use is clearer.", false)]
-        public T RunAction<T>(Func<IActionContext, T> action, [CallerMemberName] string? name = null,
-            string contextGroupName = "default")
-        {
-            return CreateAndAppendToActionExceptions(action, name, contextGroupName);
-        }
-
-        [Obsolete("Please use CreateAndAppendToActionExceptions as its use is clearer.", false)]
-        public async Task RunActionAsync(Func<IActionContext, Task> action, [CallerMemberName] string? name = null,
-            string contextGroupName = "default")
-        {
-            await CreateAndAppendToActionExceptionsAsync(action, name, contextGroupName);
-        }
-
-        [Obsolete("Please use CreateAndAppendToActionExceptions as its use is clearer.", false)]
-        public async Task<T> RunActionAsync<T>(Func<IActionContext, Task<T>> action, [CallerMemberName] string? name = null,
-            string contextGroupName = "default")
-        {
-            return await CreateAndAppendToActionExceptionsAsync(action, name, contextGroupName);
-        }
-
         public void CreateAndAppendToActionExceptions(Action<IActionContext> action,
             [CallerMemberName] string? name = null, string contextGroupName = "default")
         {

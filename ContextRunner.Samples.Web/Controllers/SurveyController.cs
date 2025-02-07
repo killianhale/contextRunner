@@ -44,28 +44,6 @@ namespace ContextRunner.Samples.Web.Controllers
                 return survey;
             });
         }
-        
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="survey"></param>
-        /// <returns></returns>
-        [HttpPost]
-        [Route("deprecated")]
-        [Obsolete("Obsolete")]
-        public SurveyRequest Post2(SurveyRequest survey)
-        {
-            return _runner.RunAction(context =>
-            {
-                context.Logger.Debug("Simulating saving survey information...");
-                context.State.SetParam("Survey", survey);
-
-                var logger = LogManager.LogFactory.GetCurrentClassLogger();
-                logger.Debug("This is a test w/ deprecated method");
-
-                return survey;
-            });
-        }
 
         /// <summary>
         /// 
